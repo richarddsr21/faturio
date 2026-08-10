@@ -48,6 +48,7 @@ export async function processPayment(
   }
 
   let userId: string;
+  let isNewUser = false;
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
     checkout.email,
     { data: { name: checkout.name } }
@@ -64,6 +65,7 @@ export async function processPayment(
 
       if (existingProfile?.id) {
         userId = existingProfile.id;
+        isNewUser = false;
       } else {
         throw new Error(`Falha ao convidar usuário: ${inviteError.message}`);
       }
@@ -74,11 +76,14 @@ export async function processPayment(
     throw new Error(`Falha ao convidar usuário: resposta vazia`);
   } else {
     userId = invited.user.id;
+    isNewUser = true;
   }
 
-  const { error: profileError } = await admin.from("profiles").insert({ id: userId, name: checkout.name, email: checkout.email });
-  if (profileError) {
-    throw new Error(`Falha ao inserir perfil: ${profileError.message}`);
+  if (isNewUser) {
+    const { error: profileError } = await admin.from("profiles").insert({ id: userId, name: checkout.name, email: checkout.email });
+    if (profileError) {
+      throw new Error(`Falha ao inserir perfil: ${profileError.message}`);
+    }
   }
 
   const { error: subError } = await admin.from("subscriptions").insert({
@@ -97,9 +102,11 @@ export async function processPayment(
     throw subError;
   }
 
-  const { error: settingsError } = await admin.from("settings").insert({ user_id: userId });
-  if (settingsError) {
-    throw new Error(`Falha ao inserir configurações: ${settingsError.message}`);
+  if (isNewUser) {
+    const { error: settingsError } = await admin.from("settings").insert({ user_id: userId });
+    if (settingsError) {
+      throw new Error(`Falha ao inserir configurações: ${settingsError.message}`);
+    }
   }
 
   await admin
