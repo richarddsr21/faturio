@@ -36,14 +36,20 @@ export async function completeOnboarding(
   // A meta é gravada ANTES de marcar onboarding_completed: se a inserção da meta falhar,
   // o proxy gate continua mandando o usuário de volta para /onboarding em vez de deixá-lo
   // passar direto para /dashboard com uma meta do mês faltando e sem forma de recriá-la.
+  // Usamos upsert (com onConflict na mesma tripla da constraint unique(user_id, month, year))
+  // para que um reenvio após falha no update de settings não esbarre na constraint unique —
+  // ele apenas regrava a mesma meta em vez de falhar.
   const now = new Date();
-  const { error: goalError } = await supabase.from("goals").insert({
-    user_id: user.id,
-    month: now.getMonth() + 1,
-    year: now.getFullYear(),
-    revenue_goal: parsed.data.revenueGoal,
-    desired_margin: parsed.data.desiredMargin,
-  });
+  const { error: goalError } = await supabase.from("goals").upsert(
+    {
+      user_id: user.id,
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+      revenue_goal: parsed.data.revenueGoal,
+      desired_margin: parsed.data.desiredMargin,
+    },
+    { onConflict: "user_id,month,year" }
+  );
 
   if (goalError) {
     return { success: false, error: "Não foi possível criar a meta do mês. Tente novamente." };
