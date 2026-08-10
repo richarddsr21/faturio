@@ -25,23 +25,27 @@
 ## Task 1: Scaffold do projeto Next.js
 
 **Files:**
-- Create: projeto Next.js completo em `/home/richard/www/projetos/faturio` (via `create-next-app`)
+- Create: projeto Next.js completo no diretório de trabalho atual (via `create-next-app`)
 
 **Interfaces:**
 - Produces: projeto Next.js 16 + TypeScript + Tailwind 4 + ESLint pronto para receber código
 
 - [ ] **Step 1: Rodar o scaffold em pasta temporária e mesclar no diretório do projeto**
 
-O diretório `faturio` já existe (com `.git` e `docs/`), então o scaffold é feito em uma pasta temporária irmã e mesclado, evitando o prompt interativo de "diretório não vazio".
+O diretório de trabalho atual já existe (com `.git` e `docs/`), então o scaffold é feito em
+uma pasta temporária **irmã do diretório atual** (nunca em um caminho absoluto fixo — o
+diretório de trabalho pode ser um worktree isolado, não o checkout principal) e mesclado,
+evitando o prompt interativo de "diretório não vazio". Rode os comandos abaixo exatamente
+como estão, a partir do diretório de trabalho atual, sem trocar de diretório antes:
 
 ```bash
-cd /home/richard/www/projetos
-npx create-next-app@latest faturio_scaffold_tmp \
+PROJECT_DIR="$(pwd)"
+SCAFFOLD_TMP="${PROJECT_DIR}_scaffold_tmp"
+npx create-next-app@latest "$SCAFFOLD_TMP" \
   --typescript --tailwind --eslint --app --no-src-dir \
   --import-alias "@/*" --turbopack --use-npm
-rsync -a --exclude=.git faturio_scaffold_tmp/ faturio/
-rm -rf faturio_scaffold_tmp
-cd faturio
+rsync -a --exclude=.git "$SCAFFOLD_TMP"/ "$PROJECT_DIR"/
+rm -rf "$SCAFFOLD_TMP"
 ```
 
 - [ ] **Step 2: Verificar que o servidor de desenvolvimento sobe sem erros**
