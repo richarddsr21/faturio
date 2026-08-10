@@ -6,15 +6,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { completeOnboarding } from "@/lib/actions/onboarding";
-import { settingsFieldsBaseSchema, feesBelow100Percent } from "@/lib/validations/settings";
+import {
+  settingsFormFieldsBaseSchema,
+  feesBelow100PercentUI,
+  settingsValuesToFraction,
+} from "@/lib/validations/settings";
 import { SettingsFormFields } from "@/components/settings/settings-form-fields";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 
-const formSchema = settingsFieldsBaseSchema
+const formSchema = settingsFormFieldsBaseSchema
   .extend({ revenueGoal: z.number().min(0, "Informe uma meta válida") })
-  .refine(feesBelow100Percent, {
+  .refine(feesBelow100PercentUI, {
     message:
       "A soma de taxa administrativa, taxa de cartão e margem desejada precisa ser menor que 100%",
     path: ["desiredMargin"],
@@ -33,7 +37,8 @@ export function OnboardingForm() {
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
-    const result = await completeOnboarding(values);
+    const { revenueGoal, ...feeValues } = values;
+    const result = await completeOnboarding({ revenueGoal, ...settingsValuesToFraction(feeValues) });
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
       return;

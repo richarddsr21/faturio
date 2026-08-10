@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { upsertGoal } from "@/lib/actions/goals";
+import { percentToFraction } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -15,7 +16,7 @@ const formSchema = z.object({
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020),
   revenueGoal: z.number().min(0, "Informe uma meta válida"),
-  desiredMargin: z.number().min(0).max(0.9999).optional(),
+  desiredMargin: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,7 +43,10 @@ export function GoalForm({
   async function onSubmit(values: FormValues) {
     setServerError(null);
     setSuccess(false);
-    const result = await upsertGoal(values);
+    const result = await upsertGoal({
+      ...values,
+      desiredMargin: values.desiredMargin !== undefined ? percentToFraction(values.desiredMargin) : undefined,
+    });
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
       return;
@@ -73,8 +77,8 @@ export function GoalForm({
             />
           </div>
           <div className="w-44">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Margem desejada</label>
-            <Input type="number" step="0.0001" {...register("desiredMargin", { valueAsNumber: true })} />
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Margem desejada (%)</label>
+            <Input type="number" step="0.01" {...register("desiredMargin", { valueAsNumber: true })} />
           </div>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Salvando..." : "Salvar meta"}

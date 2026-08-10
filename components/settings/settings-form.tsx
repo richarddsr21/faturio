@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateSettings } from "@/lib/actions/settings";
-import { settingsFieldsSchema, type SettingsFieldsValues } from "@/lib/validations/settings";
+import {
+  settingsFormFieldsSchema,
+  settingsValuesToFraction,
+  settingsValuesToPercent,
+  type SettingsFieldsValues,
+  type SettingsFormFieldsValues,
+} from "@/lib/validations/settings";
 import { SettingsFormFields } from "@/components/settings/settings-form-fields";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -19,12 +25,15 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFieldsV
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SettingsFieldsValues>({ resolver: zodResolver(settingsFieldsSchema), defaultValues });
+  } = useForm<SettingsFormFieldsValues>({
+    resolver: zodResolver(settingsFormFieldsSchema),
+    defaultValues: settingsValuesToPercent(defaultValues),
+  });
 
-  async function onSubmit(values: SettingsFieldsValues) {
+  async function onSubmit(values: SettingsFormFieldsValues) {
     setServerError(null);
     setSuccess(false);
-    const result = await updateSettings(values);
+    const result = await updateSettings(settingsValuesToFraction(values));
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
       return;

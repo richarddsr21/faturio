@@ -14,9 +14,9 @@ const fields: { name: keyof SettingsFieldsValues; label: string; step: string }[
   { name: "shippingCost", label: "Frete médio (R$)", step: "0.01" },
   { name: "giftCost", label: "Custo de brinde (R$)", step: "0.01" },
   { name: "trafficCost", label: "Custo médio de tráfego por venda (R$)", step: "0.01" },
-  { name: "adminFee", label: "Taxa administrativa (ex: 0.05 para 5%)", step: "0.0001" },
-  { name: "cardFee", label: "Taxa de cartão (ex: 0.03 para 3%)", step: "0.0001" },
-  { name: "desiredMargin", label: "Margem desejada (ex: 0.3 para 30%)", step: "0.0001" },
+  { name: "adminFee", label: "Taxa administrativa (%)", step: "0.01" },
+  { name: "cardFee", label: "Taxa de cartão (%)", step: "0.01" },
+  { name: "desiredMargin", label: "Margem desejada (%)", step: "0.01" },
 ];
 
 export function SettingsFormFields({ register, errors }: SettingsFormFieldsProps) {

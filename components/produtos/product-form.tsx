@@ -7,10 +7,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createProduct, deactivateProduct, updateProduct } from "@/lib/actions/products";
 import { calculateRecommendedPrice, PricingError } from "@/lib/finance/pricing";
-import { productSchema as formSchema } from "@/lib/validations/product";
+import { productSchema } from "@/lib/validations/product";
+import { fractionToPercent, percentToFraction } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+
+// A margem desejada é pedida como percentual (ex: 30 para 30%) — mais natural que a fração
+// armazenada no banco (0.3). `productSchema` continua sendo a forma canônica (fração), usada
+// pela Server Action, que revalida de novo; aqui só sobrescrevemos o range desse campo.
+const formSchema = productSchema.extend({
+  desiredMargin: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
+});
 
 type FormInput = z.input<typeof formSchema>;
 type FormValues = z.infer<typeof formSchema>;
@@ -61,7 +69,8 @@ export function ProductForm({
           cost: product.cost,
           entryShipping: product.entryShipping,
           currentPrice: product.currentPrice ?? undefined,
-          desiredMargin: product.desiredMargin ?? undefined,
+          desiredMargin:
+            product.desiredMargin !== null ? fractionToPercent(product.desiredMargin) : undefined,
           minimumStock: product.minimumStock,
         }
       : { entryShipping: 0, minimumStock: 0 },
@@ -69,7 +78,9 @@ export function ProductForm({
 
   const cost = watch("cost") || 0;
   const entryShipping = watch("entryShipping") || 0;
-  const desiredMargin = watch("desiredMargin") ?? settings.desiredMargin;
+  const desiredMarginPercent = watch("desiredMargin");
+  const desiredMargin =
+    desiredMarginPercent !== undefined ? percentToFraction(desiredMarginPercent) : settings.desiredMargin;
 
   const suggestedPrice = useMemo(() => {
     try {
@@ -86,7 +97,11 @@ export function ProductForm({
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
-    const result = product ? await updateProduct(product.id, values) : await createProduct(values);
+    const payload = {
+      ...values,
+      desiredMargin: values.desiredMargin !== undefined ? percentToFraction(values.desiredMargin) : undefined,
+    };
+    const result = product ? await updateProduct(product.id, payload) : await createProduct(payload);
 
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
@@ -170,12 +185,12 @@ export function ProductForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="desiredMargin" className="mb-1.5 block text-sm font-medium text-foreground">
-            Margem desejada (ex: 0.3 para 30%)
+            Margem desejada (%)
           </label>
           <Input
             id="desiredMargin"
             type="number"
-            step="0.0001"
+            step="0.01"
             {...register("desiredMargin", { valueAsNumber: true })}
           />
         </div>
