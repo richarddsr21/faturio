@@ -31,8 +31,21 @@ function verifySignature(request: NextRequest, dataId: string): boolean {
   return crypto.timingSafeEqual(hashBuffer, expectedBuffer);
 }
 
+const MINIMUM_AMOUNT = 129.9;
+const EXPECTED_CURRENCY = "BRL";
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
+
+  // O Mercado Pago envia notificações de vários tipos (payment, merchant_order,
+  // etc.) pra mesma URL. Só processamos as de pagamento — as outras retornam
+  // 200 sem processar, senão o GET /v1/payments/{id} abaixo dá 404 e o Mercado
+  // Pago fica retentando indefinidamente.
+  const notificationType = body?.type ?? (body?.action?.startsWith("payment.") ? "payment" : undefined);
+  if (notificationType !== "payment") {
+    return NextResponse.json({ received: true, ignored: true });
+  }
+
   const dataId = body?.data?.id;
 
   if (!dataId) {
@@ -53,10 +66,16 @@ export async function POST(request: NextRequest) {
 
   const payment = await mpResponse.json();
 
+  // Valida valor e moeda antes de considerar o pagamento aprovado — evita que um
+  // pagamento de valor menor (ou em outra moeda) libere acesso completo.
+  const isValidAmountAndCurrency =
+    payment.transaction_amount >= MINIMUM_AMOUNT && payment.currency_id === EXPECTED_CURRENCY;
+  const effectiveStatus = isValidAmountAndCurrency ? payment.status : "rejected";
+
   try {
     await processPayment({
       id: String(payment.id),
-      status: payment.status,
+      status: effectiveStatus,
       externalReference: payment.external_reference,
     });
   } catch (error) {
