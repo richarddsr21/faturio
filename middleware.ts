@@ -28,7 +28,11 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginResponse = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.getAll().forEach(cookie => {
+      loginResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return loginResponse;
   }
 
   const { data: subscription } = await supabase
@@ -39,7 +43,11 @@ export async function middleware(request: NextRequest) {
     .maybeSingle();
 
   if (!subscription) {
-    return NextResponse.redirect(new URL("/checkout", request.url));
+    const checkoutResponse = NextResponse.redirect(new URL("/checkout", request.url));
+    response.cookies.getAll().forEach(cookie => {
+      checkoutResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return checkoutResponse;
   }
 
   return response;
