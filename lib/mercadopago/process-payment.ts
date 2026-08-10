@@ -87,6 +87,19 @@ export async function processPayment(
     if (profileError) {
       throw new Error(`Falha ao inserir perfil: ${profileError.message}`);
     }
+  } else {
+    // Usuário reaproveitado: garante que ele ainda não tem uma assinatura ativa
+    // antes de inserir outra (evita depender só da constraint do banco).
+    const { data: activeSubscription } = await admin
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (activeSubscription) {
+      return { created: false, reason: "already_processed" };
+    }
   }
 
   const { error: subError } = await admin.from("subscriptions").insert({

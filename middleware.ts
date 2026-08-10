@@ -35,14 +35,14 @@ export async function middleware(request: NextRequest) {
     return loginResponse;
   }
 
-  const { data: subscription } = await supabase
+  const { data: subscriptions } = await supabase
     .from("subscriptions")
     .select("status")
     .eq("user_id", user.id)
     .eq("status", "active")
-    .maybeSingle();
+    .limit(1);
 
-  if (!subscription) {
+  if (!subscriptions || subscriptions.length === 0) {
     const checkoutResponse = NextResponse.redirect(new URL("/checkout", request.url));
     response.cookies.getAll().forEach(cookie => {
       checkoutResponse.cookies.set(cookie.name, cookie.value, cookie);
