@@ -50,6 +50,20 @@ export async function proxy(request: NextRequest) {
     return checkoutResponse;
   }
 
+  const { data: settings } = await supabase
+    .from("settings")
+    .select("onboarding_completed")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!settings?.onboarding_completed) {
+    const onboardingResponse = NextResponse.redirect(new URL("/onboarding", request.url));
+    response.cookies.getAll().forEach(cookie => {
+      onboardingResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return onboardingResponse;
+  }
+
   return response;
 }
 
