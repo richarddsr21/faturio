@@ -49,14 +49,15 @@ export async function processPayment(
 
   let userId: string;
   let isNewUser = false;
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-    checkout.email,
-    { data: { name: checkout.name } }
-  );
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: checkout.email,
+    email_confirm: true,
+    user_metadata: { name: checkout.name },
+  });
 
-  if (inviteError) {
+  if (createError) {
     // Se o erro for por e-mail já registrado, reutilizar o usuário existente
-    if (inviteError.message?.includes("already registered") || inviteError.message?.includes("already exists")) {
+    if (createError.message?.includes("already registered") || createError.message?.includes("already exists")) {
       const { data: existingProfile } = await admin
         .from("profiles")
         .select("id")
@@ -67,15 +68,15 @@ export async function processPayment(
         userId = existingProfile.id;
         isNewUser = false;
       } else {
-        throw new Error(`Falha ao convidar usuário: ${inviteError.message}`);
+        throw new Error(`Falha ao criar usuário: ${createError.message}`);
       }
     } else {
-      throw new Error(`Falha ao convidar usuário: ${inviteError.message}`);
+      throw new Error(`Falha ao criar usuário: ${createError.message}`);
     }
-  } else if (!invited.user) {
-    throw new Error(`Falha ao convidar usuário: resposta vazia`);
+  } else if (!created.user) {
+    throw new Error(`Falha ao criar usuário: resposta vazia`);
   } else {
-    userId = invited.user.id;
+    userId = created.user.id;
     isNewUser = true;
   }
 
