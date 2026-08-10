@@ -2,18 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-
-const productSchema = z.object({
-  name: z.string().min(1, "Informe o nome do produto"),
-  sku: z.string().optional(),
-  category: z.string().optional(),
-  supplier: z.string().optional(),
-  cost: z.number().min(0, "Não pode ser negativo"),
-  entryShipping: z.number().min(0, "Não pode ser negativo").default(0),
-  currentPrice: z.number().min(0, "Não pode ser negativo").optional(),
-  desiredMargin: z.number().min(0).max(0.9999).optional(),
-  minimumStock: z.number().int().min(0).default(0),
-});
+import { productSchema } from "@/lib/validations/product";
 
 export interface ProductActionResult {
   success: boolean;
@@ -22,7 +11,7 @@ export interface ProductActionResult {
 }
 
 export async function createProduct(
-  input: z.infer<typeof productSchema> & { initialStock?: number }
+  input: z.infer<typeof productSchema>
 ): Promise<ProductActionResult> {
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) {
@@ -37,7 +26,8 @@ export async function createProduct(
     return { success: false, error: "Sessão expirada. Faça login novamente." };
   }
 
-  const initialStock = input.initialStock && input.initialStock > 0 ? input.initialStock : 0;
+  const initialStock =
+    parsed.data.initialStock && parsed.data.initialStock > 0 ? parsed.data.initialStock : 0;
 
   const { data: product, error } = await supabase
     .from("products")
@@ -62,7 +52,7 @@ export async function createProduct(
   }
 
   if (initialStock > 0) {
-    await supabase.from("inventory_movements").insert({
+    const { error: movementError } = await supabase.from("inventory_movements").insert({
       user_id: user.id,
       product_id: product.id,
       type: "initial",
@@ -70,6 +60,15 @@ export async function createProduct(
       unit_cost: parsed.data.cost,
       reason: "Estoque inicial",
     });
+
+    if (movementError) {
+      return {
+        success: true,
+        productId: product.id,
+        error:
+          "Produto criado, mas não foi possível registrar o estoque inicial. Ajuste o estoque manualmente.",
+      };
+    }
   }
 
   return { success: true, productId: product.id };
