@@ -7,6 +7,10 @@ import { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
 
 const formSchema = z.object({
   email: z.string().email("Informe um e-mail válido"),
@@ -36,52 +40,58 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6">
-      <h1 className="text-2xl font-semibold">Entrar</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            E-mail
-          </label>
-          <input
-            id="email"
-            type="email"
-            {...register("email")}
-            className="w-full rounded-md border px-3 py-2"
-          />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
-        </div>
-        <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium">
-            Senha
-          </label>
-          <input
-            id="password"
-            type="password"
-            {...register("password")}
-            className="w-full rounded-md border px-3 py-2"
-          />
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-          )}
-        </div>
-        {serverError && <p className="text-sm text-red-600">{serverError}</p>}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
-        >
-          {isSubmitting ? "Entrando..." : "Entrar"}
-        </button>
-      </form>
-      <div className="flex justify-between text-sm">
-        <Link href="/esqueci-senha" className="underline">
-          Esqueci minha senha
-        </Link>
-        <Link href="/checkout" className="underline">
-          Não possui uma conta? Comece agora.
-        </Link>
-      </div>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 py-16">
+      <Link href="/" className="text-lg font-bold tracking-tight text-foreground">
+        Faturio
+      </Link>
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Entrar</CardTitle>
+          <CardDescription>Acesse sua conta do Faturio.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">
+                E-mail
+              </label>
+              <Input id="email" type="email" invalid={!!errors.email} {...register("email")} />
+              {errors.email && (
+                <p className="mt-1.5 text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
+                Senha
+              </label>
+              <Input
+                id="password"
+                type="password"
+                invalid={!!errors.password}
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="mt-1.5 text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+            {serverError && <Alert variant="destructive">{serverError}</Alert>}
+            <Button type="submit" disabled={isSubmitting} className="mt-2">
+              {isSubmitting ? "Entrando..." : "Entrar"}
+            </Button>
+          </form>
+          <div className="mt-6 flex justify-between text-sm text-muted-foreground">
+            <Link href="/esqueci-senha" className="hover:text-foreground">
+              Esqueci minha senha
+            </Link>
+            <Link href="/checkout" className="hover:text-foreground">
+              Comece agora
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </main>
   );
 }
