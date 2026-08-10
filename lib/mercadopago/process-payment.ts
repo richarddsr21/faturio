@@ -51,7 +51,10 @@ export async function processPayment(
   let isNewUser = false;
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
     checkout.email,
-    { data: { name: checkout.name } }
+    {
+      data: { name: checkout.name },
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
+    }
   );
 
   if (inviteError) {
