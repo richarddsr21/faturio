@@ -53,11 +53,17 @@ export async function POST(request: NextRequest) {
 
   const payment = await mpResponse.json();
 
-  await processPayment({
-    id: String(payment.id),
-    status: payment.status,
-    externalReference: payment.external_reference,
-  });
+  try {
+    await processPayment({
+      id: String(payment.id),
+      status: payment.status,
+      externalReference: payment.external_reference,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[mercadopago-webhook] Erro ao processar pagamento: dataId=${dataId}, mensagem=${errorMessage}`);
+    return NextResponse.json({ error: "failed to process payment" }, { status: 500 });
+  }
 
   return NextResponse.json({ received: true });
 }

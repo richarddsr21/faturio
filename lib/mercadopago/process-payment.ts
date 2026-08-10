@@ -47,18 +47,39 @@ export async function processPayment(
     return { created: false, reason: "already_processed" };
   }
 
+  let userId: string;
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
     checkout.email,
     { data: { name: checkout.name } }
   );
 
-  if (inviteError || !invited.user) {
-    throw new Error(`Falha ao convidar usuário: ${inviteError?.message}`);
+  if (inviteError) {
+    // Se o erro for por e-mail já registrado, reutilizar o usuário existente
+    if (inviteError.message?.includes("already registered") || inviteError.message?.includes("already exists")) {
+      const { data: existingProfile } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("email", checkout.email)
+        .maybeSingle();
+
+      if (existingProfile?.id) {
+        userId = existingProfile.id;
+      } else {
+        throw new Error(`Falha ao convidar usuário: ${inviteError.message}`);
+      }
+    } else {
+      throw new Error(`Falha ao convidar usuário: ${inviteError.message}`);
+    }
+  } else if (!invited.user) {
+    throw new Error(`Falha ao convidar usuário: resposta vazia`);
+  } else {
+    userId = invited.user.id;
   }
 
-  const userId = invited.user.id;
-
-  await admin.from("profiles").insert({ id: userId, name: checkout.name, email: checkout.email });
+  const { error: profileError } = await admin.from("profiles").insert({ id: userId, name: checkout.name, email: checkout.email });
+  if (profileError) {
+    throw new Error(`Falha ao inserir perfil: ${profileError.message}`);
+  }
 
   const { error: subError } = await admin.from("subscriptions").insert({
     user_id: userId,
@@ -76,7 +97,10 @@ export async function processPayment(
     throw subError;
   }
 
-  await admin.from("settings").insert({ user_id: userId });
+  const { error: settingsError } = await admin.from("settings").insert({ user_id: userId });
+  if (settingsError) {
+    throw new Error(`Falha ao inserir configurações: ${settingsError.message}`);
+  }
 
   await admin
     .from("pending_checkouts")
