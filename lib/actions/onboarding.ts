@@ -33,6 +33,22 @@ export async function completeOnboarding(
     return { success: false, error: "Sessão expirada. Faça login novamente." };
   }
 
+  // A meta é gravada ANTES de marcar onboarding_completed: se a inserção da meta falhar,
+  // o proxy gate continua mandando o usuário de volta para /onboarding em vez de deixá-lo
+  // passar direto para /dashboard com uma meta do mês faltando e sem forma de recriá-la.
+  const now = new Date();
+  const { error: goalError } = await supabase.from("goals").insert({
+    user_id: user.id,
+    month: now.getMonth() + 1,
+    year: now.getFullYear(),
+    revenue_goal: parsed.data.revenueGoal,
+    desired_margin: parsed.data.desiredMargin,
+  });
+
+  if (goalError) {
+    return { success: false, error: "Não foi possível criar a meta do mês. Tente novamente." };
+  }
+
   const { error: settingsError } = await supabase
     .from("settings")
     .update({
@@ -48,22 +64,9 @@ export async function completeOnboarding(
     .eq("user_id", user.id);
 
   if (settingsError) {
-    return { success: false, error: "Não foi possível salvar suas configurações. Tente novamente." };
-  }
-
-  const now = new Date();
-  const { error: goalError } = await supabase.from("goals").insert({
-    user_id: user.id,
-    month: now.getMonth() + 1,
-    year: now.getFullYear(),
-    revenue_goal: parsed.data.revenueGoal,
-    desired_margin: parsed.data.desiredMargin,
-  });
-
-  if (goalError) {
     return {
       success: false,
-      error: "Configurações salvas, mas não foi possível criar a meta do mês. Tente novamente.",
+      error: "Meta criada, mas não foi possível salvar suas configurações. Tente novamente.",
     };
   }
 
