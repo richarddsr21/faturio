@@ -30,6 +30,7 @@ export async function createMercadoPagoPreference(
       ],
       payer: { email: input.payerEmail },
       external_reference: input.externalReference,
+      notification_url: `${appUrl}/api/webhooks/mercadopago`,
       back_urls: {
         success: `${appUrl}/pagamento/sucesso`,
         pending: `${appUrl}/pagamento/pendente`,
