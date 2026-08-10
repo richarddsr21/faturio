@@ -10,7 +10,7 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 describe("processPayment — idempotência do webhook", () => {
-  const email = `webhook-test-${Date.now()}@example.com`;
+  const email = `webhook-test-${Date.now()}@faturio-test.com`;
   let checkoutId: string;
   let createdUserId: string | undefined;
 
