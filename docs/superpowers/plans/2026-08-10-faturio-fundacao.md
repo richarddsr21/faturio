@@ -25,23 +25,27 @@
 ## Task 1: Scaffold do projeto Next.js
 
 **Files:**
-- Create: projeto Next.js completo em `/home/richard/www/projetos/faturio` (via `create-next-app`)
+- Create: projeto Next.js completo no diretório de trabalho atual (via `create-next-app`)
 
 **Interfaces:**
 - Produces: projeto Next.js 16 + TypeScript + Tailwind 4 + ESLint pronto para receber código
 
 - [ ] **Step 1: Rodar o scaffold em pasta temporária e mesclar no diretório do projeto**
 
-O diretório `faturio` já existe (com `.git` e `docs/`), então o scaffold é feito em uma pasta temporária irmã e mesclado, evitando o prompt interativo de "diretório não vazio".
+O diretório de trabalho atual já existe (com `.git` e `docs/`), então o scaffold é feito em
+uma pasta temporária **irmã do diretório atual** (nunca em um caminho absoluto fixo — o
+diretório de trabalho pode ser um worktree isolado, não o checkout principal) e mesclado,
+evitando o prompt interativo de "diretório não vazio". Rode os comandos abaixo exatamente
+como estão, a partir do diretório de trabalho atual, sem trocar de diretório antes:
 
 ```bash
-cd /home/richard/www/projetos
-npx create-next-app@latest faturio_scaffold_tmp \
+PROJECT_DIR="$(pwd)"
+SCAFFOLD_TMP="${PROJECT_DIR}_scaffold_tmp"
+npx create-next-app@latest "$SCAFFOLD_TMP" \
   --typescript --tailwind --eslint --app --no-src-dir \
   --import-alias "@/*" --turbopack --use-npm
-rsync -a --exclude=.git faturio_scaffold_tmp/ faturio/
-rm -rf faturio_scaffold_tmp
-cd faturio
+rsync -a --exclude=.git "$SCAFFOLD_TMP"/ "$PROJECT_DIR"/
+rm -rf "$SCAFFOLD_TMP"
 ```
 
 - [ ] **Step 2: Verificar que o servidor de desenvolvimento sobe sem erros**
@@ -227,48 +231,49 @@ git commit -m "chore: configura Vitest e dependências principais"
 
 ---
 
-## Task 4: Projeto Supabase local
+## Task 4: Projeto Supabase remoto (concluída pelo controller — ver nota)
+
+> **Nota:** Docker não está disponível neste ambiente, então esta task foi adaptada de
+> "Supabase local" para "Supabase remoto" e já foi executada pelo controller antes da
+> Task 5, com a colaboração do usuário (login interativo via `supabase login`, criação do
+> projeto em supabase.com). Os passos abaixo documentam o que foi feito, para contexto das
+> tasks seguintes — não precisam ser reexecutados.
 
 **Files:**
 - Create: `supabase/config.toml` (gerado pelo CLI)
+- Create: `.env.local` (gitignored, não commitado)
 
 **Interfaces:**
-- Produces: instância Postgres local em `http://127.0.0.1:54321`, usada pelas migrations (Tasks 5-6) e testes de integração (Tasks 9, 15).
+- Produces: projeto Supabase remoto linkado (`mdapowazaksgxxinvwkk`), usado pelas migrations
+  (Tasks 5-6) e testes de integração (Tasks 9, 15) via `supabase db push --linked` /
+  `supabase db query --linked`.
 
-- [ ] **Step 1: Inicializar o projeto Supabase**
+O que foi feito:
 
 ```bash
 npx supabase init
+npx supabase login          # interativo, feito pelo usuário fora desta sessão de agente
+npx supabase link --project-ref mdapowazaksgxxinvwkk
 ```
 
-- [ ] **Step 2: Subir o Supabase local**
+`.env.local` foi criado na raiz do projeto com `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (usados pela aplicação) e
+também `SUPABASE_URL`/`SUPABASE_ANON_KEY` sem prefixo (usados pelos testes de integração,
+que rodam fora do runtime do Next.js). Antes de rodar `npm run test:integration` em
+qualquer task futura, carregue essas variáveis no shell:
 
 ```bash
-npx supabase start
+set -a && source .env.local && set +a
 ```
 
-Expected: saída com `API URL`, `anon key` e `service_role key`. Copie esses três valores
-para `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY`) e também exporte-os no shell para uso pelos testes de
-integração:
-
-```bash
-export SUPABASE_URL="http://127.0.0.1:54321"
-export SUPABASE_SERVICE_ROLE_KEY="<service_role_key_da_saida_acima>"
-export SUPABASE_ANON_KEY="<anon_key_da_saida_acima>"
-```
-
-- [ ] **Step 3: Verificar que o Studio local responde**
-
-Run: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:54323`
-Expected: `200`
-
-- [ ] **Step 4: Commit**
+- [ ] **Step 1: Commit dos arquivos de config do Supabase**
 
 ```bash
 git add supabase/config.toml
-git commit -m "chore: inicializa projeto Supabase local"
+git commit -m "chore: linka projeto Supabase remoto (faturio-dev)"
 ```
+
+(`.env.local` não é commitado — já está coberto pelo `.gitignore` da Task 2.)
 
 ---
 
@@ -410,17 +415,17 @@ create table public.settings (
 
 Salve como `supabase/migrations/20260810000000_initial_schema.sql`.
 
-- [ ] **Step 2: Aplicar a migration localmente**
+- [ ] **Step 2: Aplicar a migration no projeto Supabase remoto linkado**
 
 ```bash
-npx supabase db reset
+npx supabase db push --linked
 ```
 
-Expected: saída sem erros, terminando com "Finished supabase db reset".
+Expected: saída listando a migration `20260810000000_initial_schema.sql` como aplicada, sem erros.
 
 - [ ] **Step 3: Verificar que as tabelas existem**
 
-Run: `npx supabase db execute --sql "select table_name from information_schema.tables where table_schema = 'public' order by table_name;"`
+Run: `npx supabase db query --linked "select table_name from information_schema.tables where table_schema = 'public' order by table_name;"`
 Expected: lista contendo as 10 tabelas criadas acima.
 
 - [ ] **Step 4: Commit**
@@ -501,8 +506,8 @@ Salve como `supabase/migrations/20260810000001_rls_policies.sql`.
 - [ ] **Step 2: Aplicar e verificar**
 
 ```bash
-npx supabase db reset
-npx supabase db execute --sql "select tablename, rowsecurity from pg_tables where schemaname = 'public' order by tablename;"
+npx supabase db push --linked
+npx supabase db query --linked "select tablename, rowsecurity from pg_tables where schemaname = 'public' order by tablename;"
 ```
 
 Expected: todas as tabelas listadas com `rowsecurity = t`.
@@ -701,7 +706,7 @@ git commit -m "feat(auth): middleware protege /dashboard exigindo sessão e assi
   (seção 2 da spec) é respeitada no banco.
 
 - [ ] **Step 1: Escrever o teste (falha antes das migrations existirem, mas já passamos das
-  Tasks 5-6, então valide contra o banco local)**
+  Tasks 5-6, então valide contra o projeto Supabase remoto linkado)**
 
 ```typescript
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
@@ -805,8 +810,8 @@ describe("isolamento multi-tenant (RLS)", () => {
 });
 ```
 
-- [ ] **Step 2: Rodar e confirmar que passa (com `supabase start` ativo e variáveis exportadas
-  da Task 4)**
+- [ ] **Step 2: Rodar e confirmar que passa (com as variáveis de `.env.local` carregadas —
+  `set -a && source .env.local && set +a` antes do comando)**
 
 Run: `npm run test:integration`
 Expected: `4 passed`
@@ -1550,7 +1555,8 @@ describe("processPayment — idempotência do webhook", () => {
 });
 ```
 
-- [ ] **Step 2: Rodar e confirmar que passa (com `supabase start` ativo)**
+- [ ] **Step 2: Rodar e confirmar que passa (com as variáveis de `.env.local` carregadas —
+  `set -a && source .env.local && set +a` antes do comando)**
 
 Run: `npm run test:integration`
 Expected: `2 passed` (mais os 4 do teste de isolamento da Task 9 — total `6 passed`)
@@ -1795,7 +1801,7 @@ export default async function DashboardPage() {
 
 - [ ] **Step 2: Rodar toda a suíte de testes**
 
-Run: `npm run test && npm run test:integration` (com `supabase start` ativo)
+Run: `set -a && source .env.local && set +a && npm run test && npm run test:integration`
 Expected: todos os testes passando (sanidade + precificação + meta + estoque potencial +
 isolamento multi-tenant + idempotência do webhook).
 
