@@ -10,11 +10,25 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 describe("processPayment — idempotência do webhook", () => {
-  const email = `webhook-test-${Date.now()}@faturio-test.com`;
+  // INTEGRATION_TEST_EMAIL permite apontar para um destinatário real quando o e-mail
+  // embutido do Supabase (rate limit baixo) ou o SMTP customizado configurado (exige
+  // remetente de domínio verificado) rejeitam o domínio fake por padrão. Sem a
+  // variável, usa um domínio fake — suficiente quando nenhuma dessas restrições
+  // se aplica.
+  const email = process.env.INTEGRATION_TEST_EMAIL ?? `webhook-test-${Date.now()}@faturio-test.com`;
   let checkoutId: string;
   let createdUserId: string | undefined;
 
   beforeAll(async () => {
+    const { data: existingProfile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (existingProfile?.id) {
+      await admin.auth.admin.deleteUser(existingProfile.id);
+    }
+
     const { data } = await admin
       .from("pending_checkouts")
       .insert({ name: "Cliente Teste", email })
