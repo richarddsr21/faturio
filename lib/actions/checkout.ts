@@ -42,7 +42,9 @@ export async function startCheckout(input: {
       payerEmail: parsed.data.email,
     });
     return { success: true, redirectUrl: preference.init_point };
-  } catch {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[checkout] Erro ao criar preferência no Mercado Pago: ${errorMessage}`);
     return { success: false, error: "Não foi possível iniciar o pagamento. Tente novamente." };
   }
 }
