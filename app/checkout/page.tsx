@@ -46,7 +46,7 @@ export default function CheckoutPage() {
         <CardHeader>
           <CardTitle>Começar agora</CardTitle>
           <CardDescription>Acesso completo ao Faturio.</CardDescription>
-          <Badge className="mt-1 w-fit">R$ 1,00 — Pagamento único</Badge>
+          <Badge className="mt-1 w-fit">R$ 5,00 — Pagamento único</Badge>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
             </div>
             {serverError && <Alert variant="destructive">{serverError}</Alert>}
             <Button type="submit" disabled={isSubmitting} className="mt-2">
-              {isSubmitting ? "Redirecionando..." : "Ir para pagamento — R$ 1,00"}
+              {isSubmitting ? "Redirecionando..." : "Ir para pagamento — R$ 5,00"}
             </Button>
           </form>
         </CardContent>

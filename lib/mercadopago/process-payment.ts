@@ -106,7 +106,7 @@ export async function processPayment(
     user_id: userId,
     status: "active",
     mercadopago_payment_id: payment.id,
-    amount: 1,
+    amount: 5,
     started_at: new Date().toISOString(),
   });
 

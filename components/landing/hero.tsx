@@ -20,7 +20,7 @@ export function Hero() {
           <Button asChild size="lg">
             <Link href="/checkout">Começar agora</Link>
           </Button>
-          <Badge>R$ 1,00 — Pagamento único</Badge>
+          <Badge>R$ 5,00 — Pagamento único</Badge>
         </div>
       </div>
       <HeroVisual />
