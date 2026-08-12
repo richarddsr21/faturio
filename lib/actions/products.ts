@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { productSchema } from "@/lib/validations/product";
 
@@ -62,16 +63,13 @@ export async function createProduct(
     });
 
     if (movementError) {
-      return {
-        success: true,
-        productId: product.id,
-        error:
-          "Produto criado, mas não foi possível registrar o estoque inicial. Ajuste o estoque manualmente.",
-      };
+      // Produto já foi criado; segue para a lista mesmo com o estoque inicial não
+      // registrado — o usuário pode ajustar o estoque manualmente por lá.
+      redirect("/dashboard/produtos");
     }
   }
 
-  return { success: true, productId: product.id };
+  redirect("/dashboard/produtos");
 }
 
 export async function updateProduct(
@@ -104,7 +102,7 @@ export async function updateProduct(
     return { success: false, error: "Não foi possível salvar o produto. Tente novamente." };
   }
 
-  return { success: true, productId };
+  redirect("/dashboard/produtos");
 }
 
 export async function deactivateProduct(productId: string): Promise<ProductActionResult> {
@@ -118,5 +116,5 @@ export async function deactivateProduct(productId: string): Promise<ProductActio
     return { success: false, error: "Não foi possível remover o produto. Tente novamente." };
   }
 
-  return { success: true, productId };
+  redirect("/dashboard/produtos");
 }

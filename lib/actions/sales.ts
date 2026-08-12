@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 const saleItemSchema = z.object({
@@ -47,5 +48,5 @@ export async function registerSale(
     return { success: false, error: "Não foi possível registrar a venda. Tente novamente." };
   }
 
-  return { success: true, saleId: data as string };
+  redirect("/dashboard/vendas");
 }

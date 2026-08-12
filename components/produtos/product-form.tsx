@@ -1,14 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createProduct, deactivateProduct, updateProduct } from "@/lib/actions/products";
 import { calculateRecommendedPrice, PricingError } from "@/lib/finance/pricing";
 import { productSchema } from "@/lib/validations/product";
-import { fractionToPercent, percentToFraction } from "@/lib/utils";
+import { fractionToPercent, optionalNumber, percentToFraction } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -51,7 +50,6 @@ export function ProductForm({
   product?: ProductFormProduct;
   settings: ProductFormSettings;
 }) {
-  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
@@ -105,10 +103,7 @@ export function ProductForm({
 
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
-      return;
     }
-    router.push("/dashboard/produtos");
-    router.refresh();
   }
 
   async function onDeactivate() {
@@ -117,10 +112,7 @@ export function ProductForm({
     const result = await deactivateProduct(product.id);
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
-      return;
     }
-    router.push("/dashboard/produtos");
-    router.refresh();
   }
 
   return (
@@ -191,7 +183,7 @@ export function ProductForm({
             id="desiredMargin"
             type="number"
             step="0.01"
-            {...register("desiredMargin", { valueAsNumber: true })}
+            {...register("desiredMargin", { setValueAs: optionalNumber })}
           />
         </div>
         <div>
@@ -202,7 +194,7 @@ export function ProductForm({
             id="currentPrice"
             type="number"
             step="0.01"
-            {...register("currentPrice", { valueAsNumber: true })}
+            {...register("currentPrice", { setValueAs: optionalNumber })}
           />
         </div>
       </div>
@@ -226,7 +218,7 @@ export function ProductForm({
               id="initialStock"
               type="number"
               step="1"
-              {...register("initialStock", { valueAsNumber: true })}
+              {...register("initialStock", { setValueAs: optionalNumber })}
             />
           </div>
         )}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,7 +26,6 @@ const formSchema = settingsFormFieldsBaseSchema
 type FormValues = z.infer<typeof formSchema>;
 
 export function OnboardingForm() {
-  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
@@ -41,10 +39,7 @@ export function OnboardingForm() {
     const result = await completeOnboarding({ revenueGoal, ...settingsValuesToFraction(feeValues) });
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
-      return;
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (

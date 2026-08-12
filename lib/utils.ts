@@ -15,3 +15,10 @@ export function fractionToPercent(value: number): number {
 export function percentToFraction(value: number): number {
   return value / 100;
 }
+
+// Para campos numéricos opcionais: um <input type="number"> vazio produz NaN via
+// valueAsNumber, e zod rejeita NaN mesmo em campos .optional() (que só aceitam undefined).
+// Use como `register(field, { setValueAs: optionalNumber })` nesses campos.
+export function optionalNumber(value: string): number | undefined {
+  return value === "" ? undefined : Number(value);
+}

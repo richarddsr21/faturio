@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { settingsFieldsBaseSchema, feesBelow100Percent } from "@/lib/validations/settings";
 
@@ -76,5 +77,5 @@ export async function completeOnboarding(
     };
   }
 
-  return { success: true };
+  redirect("/dashboard");
 }

@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { upsertGoal } from "@/lib/actions/goals";
-import { percentToFraction } from "@/lib/utils";
+import { optionalNumber, percentToFraction } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -78,7 +78,7 @@ export function GoalForm({
           </div>
           <div className="w-44">
             <label className="mb-1.5 block text-sm font-medium text-foreground">Margem desejada (%)</label>
-            <Input type="number" step="0.01" {...register("desiredMargin", { valueAsNumber: true })} />
+            <Input type="number" step="0.01" {...register("desiredMargin", { setValueAs: optionalNumber })} />
           </div>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Salvando..." : "Salvar meta"}
