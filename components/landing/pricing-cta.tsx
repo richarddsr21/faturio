@@ -14,7 +14,7 @@ export function PricingCTA() {
       <div className="mx-auto max-w-lg px-6 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Preço</h2>
         <div className="mt-8 rounded-2xl border border-border bg-card p-8">
-          <p className="text-5xl font-bold tabular-nums text-foreground">R$ 129,90</p>
+          <p className="text-5xl font-bold tabular-nums text-foreground">R$ 1,00</p>
           <p className="mt-1 text-sm text-muted-foreground">Pagamento único — acesso vitalício</p>
           <ul className="mt-6 flex flex-col gap-2.5 text-left">
             {included.map((item) => (

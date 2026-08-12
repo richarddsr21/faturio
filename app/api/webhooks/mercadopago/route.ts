@@ -31,7 +31,7 @@ function verifySignature(request: NextRequest, dataId: string): boolean {
   return crypto.timingSafeEqual(hashBuffer, expectedBuffer);
 }
 
-const MINIMUM_AMOUNT = 129.9;
+const MINIMUM_AMOUNT = 1;
 const EXPECTED_CURRENCY = "BRL";
 
 export async function POST(request: NextRequest) {

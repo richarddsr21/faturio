@@ -8,7 +8,7 @@ import {
 const faqs = [
   {
     question: "É realmente pagamento único, sem mensalidade?",
-    answer: "Sim. Você paga uma vez R$ 129,90 e tem acesso vitalício ao Faturio.",
+    answer: "Sim. Você paga uma vez R$ 1,00 e tem acesso vitalício ao Faturio.",
   },
   {
     question: "Preciso entender de finanças pra usar o Faturio?",
