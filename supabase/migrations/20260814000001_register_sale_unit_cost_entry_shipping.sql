@@ -1,0 +1,133 @@
+-- Bug reportado por cliente: a margem líquida realizada nas vendas não batia com a
+-- "margem desejada" configurada no produto.
+--
+-- Causa: o preço sugerido (lib/finance/pricing.ts, via components/produtos/product-form.tsx)
+-- usa `cost + entry_shipping` como custo fixo por unidade — ou seja, o frete de entrada já
+-- está embutido no preço calculado para render a margem desejada. Mas `register_sale` gravava
+-- `sale_items.unit_cost`/calculava o lucro usando só `products.cost`, sem o `entry_shipping`.
+-- Resultado: toda venda de um produto com frete de entrada > 0 realizava uma margem líquida
+-- MAIOR que a configurada (o custo do frete de entrada "sumia" da conta do lucro real, mesmo
+-- tendo sido cobrado no preço). Corrigido usando `cost + entry_shipping` como unit_cost, para
+-- bater exatamente com a base de custo usada no cálculo do preço sugerido.
+create or replace function public.register_sale(
+  p_items jsonb,
+  p_payment_method text,
+  p_discount numeric default 0,
+  p_sale_date timestamptz default now()
+)
+returns uuid
+language plpgsql
+security invoker
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_sale_id uuid;
+  v_item jsonb;
+  v_stock_check record;
+  v_locked_stock integer;
+  v_quantity integer;
+  v_unit_price numeric;
+  v_unit_cost numeric;
+  v_subtotal numeric;
+  v_profit numeric;
+  v_gross_revenue numeric;
+  v_net_profit numeric;
+  v_packaging_cost numeric;
+  v_gift_cost numeric;
+  v_shipping_cost numeric;
+  v_traffic_cost numeric;
+  v_admin_fee numeric;
+  v_card_fee numeric;
+  v_fees numeric;
+begin
+  if v_user_id is null then
+    raise exception 'Usuário não autenticado';
+  end if;
+
+  if p_items is null or jsonb_array_length(p_items) = 0 then
+    raise exception 'A venda precisa ter ao menos um item';
+  end if;
+
+  select packaging_cost, gift_cost, shipping_cost, traffic_cost, admin_fee, card_fee
+    into v_packaging_cost, v_gift_cost, v_shipping_cost, v_traffic_cost, v_admin_fee, v_card_fee
+  from public.settings
+  where user_id = v_user_id;
+
+  if not found then
+    raise exception 'Configurações não encontradas para o usuário';
+  end if;
+
+  -- valida estoque suficiente por produto, somando quantidades repetidas do mesmo
+  -- produto, e trava a linha do produto (for update) para serializar contra vendas
+  -- concorrentes do mesmo produto até o fim desta transação.
+  for v_stock_check in
+    select
+      (item->>'product_id')::uuid as product_id,
+      sum((item->>'quantity')::integer) as total_quantity
+    from jsonb_array_elements(p_items) as item
+    group by item->>'product_id'
+  loop
+    select stock_quantity into v_locked_stock
+      from public.products
+      where id = v_stock_check.product_id
+        and user_id = v_user_id
+      for update;
+
+    if not found or v_locked_stock < v_stock_check.total_quantity then
+      raise exception 'Produto não encontrado ou estoque insuficiente para o produto %', v_stock_check.product_id;
+    end if;
+  end loop;
+
+  select sum((item->>'quantity')::integer * (item->>'unit_price')::numeric)
+    into v_gross_revenue
+  from jsonb_array_elements(p_items) as item;
+
+  v_gross_revenue := v_gross_revenue - coalesce(p_discount, 0);
+  v_fees := v_gross_revenue * (v_admin_fee + v_card_fee);
+
+  insert into public.sales (
+    user_id, sale_date, payment_method, discount, gross_revenue, fees,
+    shipping_cost, packaging_cost, gift_cost, traffic_cost, net_profit
+  ) values (
+    v_user_id, p_sale_date, p_payment_method, coalesce(p_discount, 0), v_gross_revenue, v_fees,
+    v_shipping_cost, v_packaging_cost, v_gift_cost, v_traffic_cost, 0
+  ) returning id into v_sale_id;
+
+  for v_item in select * from jsonb_array_elements(p_items)
+  loop
+    v_quantity := (v_item->>'quantity')::integer;
+    v_unit_price := (v_item->>'unit_price')::numeric;
+
+    select cost + entry_shipping into v_unit_cost from public.products
+      where id = (v_item->>'product_id')::uuid and user_id = v_user_id;
+
+    v_subtotal := v_quantity * v_unit_price;
+    v_profit := v_subtotal - (v_quantity * v_unit_cost);
+
+    insert into public.sale_items (
+      user_id, sale_id, product_id, quantity, unit_price, unit_cost, subtotal, profit
+    ) values (
+      v_user_id, v_sale_id, (v_item->>'product_id')::uuid, v_quantity, v_unit_price, v_unit_cost, v_subtotal, v_profit
+    );
+
+    insert into public.inventory_movements (
+      user_id, product_id, type, quantity, reason
+    ) values (
+      v_user_id, (v_item->>'product_id')::uuid, 'sale', -v_quantity, 'Venda ' || v_sale_id::text
+    );
+
+    update public.products
+      set stock_quantity = stock_quantity - v_quantity, updated_at = now()
+      where id = (v_item->>'product_id')::uuid and user_id = v_user_id;
+  end loop;
+
+  select sum(profit) into v_net_profit from public.sale_items where sale_id = v_sale_id;
+  v_net_profit := v_net_profit - coalesce(p_discount, 0) - v_fees - v_shipping_cost - v_packaging_cost - v_gift_cost - v_traffic_cost;
+
+  update public.sales set net_profit = v_net_profit where id = v_sale_id;
+
+  return v_sale_id;
+end;
+$$;
+
+grant execute on function public.register_sale(jsonb, text, numeric, timestamptz) to authenticated;
