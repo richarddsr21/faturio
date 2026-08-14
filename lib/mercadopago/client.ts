@@ -24,7 +24,7 @@ export async function createMercadoPagoPreference(
         {
           title: "Faturio — Acesso completo",
           quantity: 1,
-          unit_price: 5,
+          unit_price: 129.9,
           currency_id: "BRL",
         },
       ],
