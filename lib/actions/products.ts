@@ -82,6 +82,13 @@ export async function updateProduct(
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: "Sessão expirada. Faça login novamente." };
+  }
+
   const { error } = await supabase
     .from("products")
     .update({
@@ -96,7 +103,8 @@ export async function updateProduct(
       minimum_stock: parsed.data.minimumStock,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", productId);
+    .eq("id", productId)
+    .eq("user_id", user.id);
 
   if (error) {
     return { success: false, error: "Não foi possível salvar o produto. Tente novamente." };
@@ -107,10 +115,18 @@ export async function updateProduct(
 
 export async function deactivateProduct(productId: string): Promise<ProductActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: "Sessão expirada. Faça login novamente." };
+  }
+
   const { error } = await supabase
     .from("products")
     .update({ status: "inactive", updated_at: new Date().toISOString() })
-    .eq("id", productId);
+    .eq("id", productId)
+    .eq("user_id", user.id);
 
   if (error) {
     return { success: false, error: "Não foi possível remover o produto. Tente novamente." };

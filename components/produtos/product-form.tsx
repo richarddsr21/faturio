@@ -55,6 +55,7 @@ export function ProductForm({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
@@ -204,7 +205,14 @@ export function ProductForm({
           Preço sugerido:{" "}
           <span className="font-semibold text-primary">
             {suggestedPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-          </span>
+          </span>{" "}
+          <button
+            type="button"
+            className="font-medium text-primary hover:underline"
+            onClick={() => setValue("currentPrice", Number(suggestedPrice.toFixed(2)), { shouldValidate: true })}
+          >
+            Usar sugestão
+          </button>
         </p>
       )}
 
