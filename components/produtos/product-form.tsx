@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -117,6 +117,17 @@ export function ProductForm({
       throw error;
     }
   }, [cost, entryShipping, packagingCost, shippingCost, giftCost, adminFee, cardFee, desiredMargin]);
+
+  // Preço de venda começa "gerenciado automaticamente" pelo preço sugerido: em produto novo,
+  // ou editando um produto sem preço salvo, todo recálculo do sugerido atualiza o campo sozinho.
+  // Assim que o usuário digita um valor manualmente ali, paramos de sobrescrever — a menos que
+  // ele limpe o campo, aí a sugestão volta a valer.
+  const priceManuallySetRef = useRef(!!product?.currentPrice);
+
+  useEffect(() => {
+    if (priceManuallySetRef.current || suggestedPrice === null) return;
+    setValue("currentPrice", Number(suggestedPrice.toFixed(2)));
+  }, [suggestedPrice, setValue]);
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
@@ -299,24 +310,22 @@ export function ProductForm({
             id="currentPrice"
             type="number"
             step="0.01"
-            {...register("currentPrice", { setValueAs: optionalNumber })}
+            {...register("currentPrice", {
+              setValueAs: optionalNumber,
+              onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+                priceManuallySetRef.current = event.target.value !== "";
+              },
+            })}
           />
         </div>
       </div>
 
       {suggestedPrice !== null && (
         <p className="text-sm text-muted-foreground">
-          Preço sugerido:{" "}
+          Preço sugerido (preenchido automaticamente acima):{" "}
           <span className="font-semibold text-primary">
             {suggestedPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-          </span>{" "}
-          <button
-            type="button"
-            className="font-medium text-primary hover:underline"
-            onClick={() => setValue("currentPrice", Number(suggestedPrice.toFixed(2)), { shouldValidate: true })}
-          >
-            Usar sugestão
-          </button>
+          </span>
         </p>
       )}
 
