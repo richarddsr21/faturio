@@ -12,8 +12,10 @@ import {
   Settings,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/actions/auth";
 
 const links = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
@@ -55,6 +57,20 @@ function SidebarLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function SignOutButton() {
+  return (
+    <form action={signOut}>
+      <button
+        type="submit"
+        className="flex w-full items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <LogOut className="h-4 w-4 shrink-0" />
+        Sair
+      </button>
+    </form>
+  );
+}
+
 export function Sidebar() {
   const [open, setOpen] = useState(false);
 
@@ -75,15 +91,21 @@ export function Sidebar() {
         </button>
       </header>
       {open && (
-        <div className="border-b border-border px-6 py-4 md:hidden">
+        <div className="flex flex-col gap-1 border-b border-border px-6 py-4 md:hidden">
           <SidebarLinks onNavigate={() => setOpen(false)} />
+          <div className="mt-1 border-t border-border pt-1">
+            <SignOutButton />
+          </div>
         </div>
       )}
       <aside className="hidden w-60 shrink-0 border-r border-border p-4 md:flex md:flex-col md:gap-6">
         <Link href="/dashboard" className="px-2 text-lg font-bold tracking-tight text-foreground">
           Faturio
         </Link>
-        <SidebarLinks />
+        <div className="flex flex-1 flex-col justify-between">
+          <SidebarLinks />
+          <SignOutButton />
+        </div>
       </aside>
     </>
   );
