@@ -13,18 +13,13 @@ export const settingsFieldsBaseSchema = z.object({
 
 export type SettingsFieldsValues = z.infer<typeof settingsFieldsBaseSchema>;
 
-export function feesBelow100Percent(data: {
-  adminFee: number;
-  cardFee: number;
-  desiredMargin: number;
-}) {
-  return data.adminFee + data.cardFee + data.desiredMargin < 1;
+export function feesBelow100Percent(data: { adminFee: number; cardFee: number }) {
+  return data.adminFee + data.cardFee < 1;
 }
 
 export const settingsFieldsSchema = settingsFieldsBaseSchema.refine(feesBelow100Percent, {
-  message:
-    "A soma de taxa administrativa, taxa de cartão e margem desejada precisa ser menor que 100%",
-  path: ["desiredMargin"],
+  message: "A soma de taxa administrativa e taxa de cartão precisa ser menor que 100%",
+  path: ["cardFee"],
 });
 
 // Os formulários pedem taxa/margem como percentual (ex: 5 para 5%) em vez da fração armazenada
@@ -39,20 +34,15 @@ export const settingsFormFieldsBaseSchema = settingsFieldsBaseSchema.extend({
 
 export type SettingsFormFieldsValues = z.infer<typeof settingsFormFieldsBaseSchema>;
 
-export function feesBelow100PercentUI(data: {
-  adminFee: number;
-  cardFee: number;
-  desiredMargin: number;
-}) {
-  return data.adminFee + data.cardFee + data.desiredMargin < 100;
+export function feesBelow100PercentUI(data: { adminFee: number; cardFee: number }) {
+  return data.adminFee + data.cardFee < 100;
 }
 
 export const settingsFormFieldsSchema = settingsFormFieldsBaseSchema.refine(
   feesBelow100PercentUI,
   {
-    message:
-      "A soma de taxa administrativa, taxa de cartão e margem desejada precisa ser menor que 100%",
-    path: ["desiredMargin"],
+    message: "A soma de taxa administrativa e taxa de cartão precisa ser menor que 100%",
+    path: ["cardFee"],
   }
 );
 

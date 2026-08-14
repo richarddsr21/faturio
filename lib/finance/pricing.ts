@@ -8,13 +8,11 @@ export interface RecommendedPriceInput {
 
 export function calculateRecommendedPrice(input: RecommendedPriceInput): number {
   const { fixedCostsPerUnit, feesPercentage, desiredMargin } = input;
-  const denominator = 1 - feesPercentage - desiredMargin;
+  const denominator = 1 - feesPercentage;
 
   if (denominator <= 0) {
-    throw new PricingError(
-      "A soma das taxas percentuais com a margem desejada não pode atingir 100%."
-    );
+    throw new PricingError("As taxas percentuais não podem atingir 100%.");
   }
 
-  return fixedCostsPerUnit / denominator;
+  return (fixedCostsPerUnit * (1 + desiredMargin)) / denominator;
 }

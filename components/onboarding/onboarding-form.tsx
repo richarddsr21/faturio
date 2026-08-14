@@ -18,9 +18,8 @@ import { Alert } from "@/components/ui/alert";
 const formSchema = settingsFormFieldsBaseSchema
   .extend({ revenueGoal: z.number().min(0, "Informe uma meta válida") })
   .refine(feesBelow100PercentUI, {
-    message:
-      "A soma de taxa administrativa, taxa de cartão e margem desejada precisa ser menor que 100%",
-    path: ["desiredMargin"],
+    message: "A soma de taxa administrativa e taxa de cartão precisa ser menor que 100%",
+    path: ["cardFee"],
   });
 
 type FormValues = z.infer<typeof formSchema>;

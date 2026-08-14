@@ -262,15 +262,15 @@ o checkout ("Não possui uma conta? Comece agora.").
 
 **Preço de venda recomendado:**
 ```
-Preço = C / (1 - T - M)
+Preço = C × (1 + M) / (1 - T)
 ```
 - `C` = custos fixos por unidade (embalagem + frete + brinde + custo do produto)
 - `T` = soma das taxas percentuais (taxa administrativa + taxa de cartão)
-- `M` = margem líquida desejada
+- `M` = margem desejada, como markup sobre `C` (ex: M=0,85 sobre C=24 dá lucro de 0,85×24
+  antes das taxas — não 85% do preço final)
 
-Validação: `T + M < 1`, senão erro "Configuração de custos inválida — a soma de taxas e
-margem não pode atingir 100%." Implementado como função pura testável em
-`lib/finance/pricing.ts`.
+Validação: `T < 1`, senão erro "As taxas percentuais não podem atingir 100%." Implementado
+como função pura testável em `lib/finance/pricing.ts`.
 
 **Quanto falta para a meta:**
 ```
