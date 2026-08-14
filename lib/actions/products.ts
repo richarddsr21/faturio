@@ -44,6 +44,11 @@ export async function createProduct(
       desired_margin: parsed.data.desiredMargin ?? null,
       stock_quantity: initialStock,
       minimum_stock: parsed.data.minimumStock,
+      packaging_cost: parsed.data.packagingCost ?? null,
+      shipping_cost: parsed.data.shippingCost ?? null,
+      gift_cost: parsed.data.giftCost ?? null,
+      admin_fee: parsed.data.adminFee ?? null,
+      card_fee: parsed.data.cardFee ?? null,
     })
     .select()
     .single();
@@ -101,6 +106,11 @@ export async function updateProduct(
       current_price: parsed.data.currentPrice ?? null,
       desired_margin: parsed.data.desiredMargin ?? null,
       minimum_stock: parsed.data.minimumStock,
+      packaging_cost: parsed.data.packagingCost ?? null,
+      shipping_cost: parsed.data.shippingCost ?? null,
+      gift_cost: parsed.data.giftCost ?? null,
+      admin_fee: parsed.data.adminFee ?? null,
+      card_fee: parsed.data.cardFee ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", productId)

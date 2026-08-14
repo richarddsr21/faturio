@@ -11,6 +11,13 @@ export const productSchema = z.object({
   desiredMargin: z.number().min(0).max(0.9999).optional(),
   minimumStock: z.number().int().min(0).default(0),
   initialStock: z.number().int().min(0).optional(),
+  // Custos que por padrão vêm de `settings` (globais), mas podem ser sobrescritos por
+  // produto. `undefined` aqui vira NULL no banco = "usa o valor padrão de settings".
+  packagingCost: z.number().min(0, "Não pode ser negativo").optional(),
+  shippingCost: z.number().min(0, "Não pode ser negativo").optional(),
+  giftCost: z.number().min(0, "Não pode ser negativo").optional(),
+  adminFee: z.number().min(0).max(0.9999).optional(),
+  cardFee: z.number().min(0).max(0.9999).optional(),
 });
 
 export type ProductFieldsValues = z.infer<typeof productSchema>;

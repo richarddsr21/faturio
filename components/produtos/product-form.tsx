@@ -12,11 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 
-// A margem desejada é pedida como percentual (ex: 30 para 30%) — mais natural que a fração
+// Margem/taxas são pedidas como percentual (ex: 30 para 30%) — mais natural que a fração
 // armazenada no banco (0.3). `productSchema` continua sendo a forma canônica (fração), usada
-// pela Server Action, que revalida de novo; aqui só sobrescrevemos o range desse campo.
+// pela Server Action, que revalida de novo; aqui só sobrescrevemos o range desses campos.
 const formSchema = productSchema.extend({
   desiredMargin: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
+  adminFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
+  cardFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
 });
 
 type FormInput = z.input<typeof formSchema>;
@@ -25,6 +27,7 @@ type FormValues = z.infer<typeof formSchema>;
 export interface ProductFormSettings {
   packagingCost: number;
   shippingCost: number;
+  giftCost: number;
   adminFee: number;
   cardFee: number;
   desiredMargin: number;
@@ -41,6 +44,12 @@ export interface ProductFormProduct {
   currentPrice: number | null;
   desiredMargin: number | null;
   minimumStock: number;
+  // Overrides opcionais dos custos que por padrão vêm de `settings`; null = usa o padrão.
+  packagingCost: number | null;
+  shippingCost: number | null;
+  giftCost: number | null;
+  adminFee: number | null;
+  cardFee: number | null;
 }
 
 export function ProductForm({
@@ -71,6 +80,11 @@ export function ProductForm({
           desiredMargin:
             product.desiredMargin !== null ? fractionToPercent(product.desiredMargin) : undefined,
           minimumStock: product.minimumStock,
+          packagingCost: product.packagingCost ?? undefined,
+          shippingCost: product.shippingCost ?? undefined,
+          giftCost: product.giftCost ?? undefined,
+          adminFee: product.adminFee !== null ? fractionToPercent(product.adminFee) : undefined,
+          cardFee: product.cardFee !== null ? fractionToPercent(product.cardFee) : undefined,
         }
       : { entryShipping: 0, minimumStock: 0 },
   });
@@ -81,24 +95,36 @@ export function ProductForm({
   const desiredMargin =
     desiredMarginPercent !== undefined ? percentToFraction(desiredMarginPercent) : settings.desiredMargin;
 
+  // Cada custo abaixo cai no valor padrão de `settings` quando o produto não tem um
+  // override próprio (campo deixado em branco).
+  const packagingCost = watch("packagingCost") ?? settings.packagingCost;
+  const shippingCost = watch("shippingCost") ?? settings.shippingCost;
+  const giftCost = watch("giftCost") ?? settings.giftCost;
+  const adminFeePercent = watch("adminFee");
+  const cardFeePercent = watch("cardFee");
+  const adminFee = adminFeePercent !== undefined ? percentToFraction(adminFeePercent) : settings.adminFee;
+  const cardFee = cardFeePercent !== undefined ? percentToFraction(cardFeePercent) : settings.cardFee;
+
   const suggestedPrice = useMemo(() => {
     try {
       return calculateRecommendedPrice({
-        fixedCostsPerUnit: cost + entryShipping + settings.packagingCost + settings.shippingCost,
-        feesPercentage: settings.adminFee + settings.cardFee,
+        fixedCostsPerUnit: cost + entryShipping + packagingCost + shippingCost + giftCost,
+        feesPercentage: adminFee + cardFee,
         desiredMargin,
       });
     } catch (error) {
       if (error instanceof PricingError) return null;
       throw error;
     }
-  }, [cost, entryShipping, desiredMargin, settings]);
+  }, [cost, entryShipping, packagingCost, shippingCost, giftCost, adminFee, cardFee, desiredMargin]);
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
     const payload = {
       ...values,
       desiredMargin: values.desiredMargin !== undefined ? percentToFraction(values.desiredMargin) : undefined,
+      adminFee: values.adminFee !== undefined ? percentToFraction(values.adminFee) : undefined,
+      cardFee: values.cardFee !== undefined ? percentToFraction(values.cardFee) : undefined,
     };
     const result = product ? await updateProduct(product.id, payload) : await createProduct(payload);
 
@@ -171,6 +197,84 @@ export function ProductForm({
             type="number"
             step="0.01"
             {...register("entryShipping", { valueAsNumber: true })}
+          />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-foreground">Custos deste produto (opcional)</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Deixe em branco para usar o padrão de Configurações — só preencha se este produto
+          tiver um custo diferente.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="packagingCost" className="mb-1.5 block text-sm font-medium text-foreground">
+            Embalagem (R$)
+          </label>
+          <Input
+            id="packagingCost"
+            type="number"
+            step="0.01"
+            placeholder={settings.packagingCost.toFixed(2)}
+            {...register("packagingCost", { setValueAs: optionalNumber })}
+          />
+        </div>
+        <div>
+          <label htmlFor="shippingCost" className="mb-1.5 block text-sm font-medium text-foreground">
+            Frete de envio (R$)
+          </label>
+          <Input
+            id="shippingCost"
+            type="number"
+            step="0.01"
+            placeholder={settings.shippingCost.toFixed(2)}
+            {...register("shippingCost", { setValueAs: optionalNumber })}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="giftCost" className="mb-1.5 block text-sm font-medium text-foreground">
+            Brinde (R$)
+          </label>
+          <Input
+            id="giftCost"
+            type="number"
+            step="0.01"
+            placeholder={settings.giftCost.toFixed(2)}
+            {...register("giftCost", { setValueAs: optionalNumber })}
+          />
+        </div>
+        <div />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="adminFee" className="mb-1.5 block text-sm font-medium text-foreground">
+            Taxa administrativa (%)
+          </label>
+          <Input
+            id="adminFee"
+            type="number"
+            step="0.01"
+            placeholder={fractionToPercent(settings.adminFee).toString()}
+            {...register("adminFee", { setValueAs: optionalNumber })}
+          />
+        </div>
+        <div>
+          <label htmlFor="cardFee" className="mb-1.5 block text-sm font-medium text-foreground">
+            Taxa de cartão (%)
+          </label>
+          <Input
+            id="cardFee"
+            type="number"
+            step="0.01"
+            placeholder={fractionToPercent(settings.cardFee).toString()}
+            {...register("cardFee", { setValueAs: optionalNumber })}
           />
         </div>
       </div>

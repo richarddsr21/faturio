@@ -17,13 +17,13 @@ export default async function EditarProdutoPage({
     supabase
       .from("products")
       .select(
-        "id, name, sku, category, supplier, cost, entry_shipping, current_price, desired_margin, minimum_stock"
+        "id, name, sku, category, supplier, cost, entry_shipping, current_price, desired_margin, minimum_stock, packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee"
       )
       .eq("id", id)
       .single(),
     supabase
       .from("settings")
-      .select("packaging_cost, shipping_cost, admin_fee, card_fee, desired_margin")
+      .select("packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee, desired_margin")
       .eq("user_id", user!.id)
       .single(),
   ]);
@@ -49,10 +49,16 @@ export default async function EditarProdutoPage({
           currentPrice: product.current_price !== null ? Number(product.current_price) : null,
           desiredMargin: product.desired_margin !== null ? Number(product.desired_margin) : null,
           minimumStock: product.minimum_stock,
+          packagingCost: product.packaging_cost !== null ? Number(product.packaging_cost) : null,
+          shippingCost: product.shipping_cost !== null ? Number(product.shipping_cost) : null,
+          giftCost: product.gift_cost !== null ? Number(product.gift_cost) : null,
+          adminFee: product.admin_fee !== null ? Number(product.admin_fee) : null,
+          cardFee: product.card_fee !== null ? Number(product.card_fee) : null,
         }}
         settings={{
           packagingCost: Number(settings?.packaging_cost ?? 0),
           shippingCost: Number(settings?.shipping_cost ?? 0),
+          giftCost: Number(settings?.gift_cost ?? 0),
           adminFee: Number(settings?.admin_fee ?? 0),
           cardFee: Number(settings?.card_fee ?? 0),
           desiredMargin: Number(settings?.desired_margin ?? 0),
