@@ -12,10 +12,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const title = "Faturio — Precificação, estoque e vendas em um só lugar";
+const description =
+  "Saiba quanto vender, quanto lucrar e quanto falta para atingir sua meta. Controle preços, produtos, estoque e vendas no Faturio.";
+
 export const metadata: Metadata = {
-  title: "Faturio — Precificação, estoque e vendas em um só lugar",
-  description:
-    "Saiba quanto vender, quanto lucrar e quanto falta para atingir sua meta. Controle preços, produtos, estoque e vendas no Faturio.",
+  metadataBase: new URL("https://faturio.com.br"),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    url: "https://faturio.com.br",
+    siteName: "Faturio",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
