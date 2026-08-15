@@ -98,7 +98,7 @@ export function Sidebar() {
           </div>
         </div>
       )}
-      <aside className="hidden w-60 shrink-0 border-r border-border p-4 md:flex md:flex-col md:gap-6">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto border-r border-border p-4 md:flex md:flex-col md:gap-6">
         <Link href="/dashboard" className="px-2 text-lg font-bold tracking-tight text-foreground">
           Faturio
         </Link>

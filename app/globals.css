@@ -81,20 +81,34 @@
   }
 }
 
+/*
+ * Autocontido de propósito: declara TODOS os tokens, não só os que mudam em
+ * relação ao :root claro. .dashboard-theme precisa ficar imune ao
+ * @media (prefers-color-scheme: dark) acima — o dashboard não tem variante
+ * dark nesta leva, então sempre renderiza nesta paleta, mesmo com o SO em
+ * dark mode. Se declarássemos só o diff, os tokens omitidos herdariam do
+ * dark mode do :root (ex.: card escuro com texto índigo escuro em cima).
+ */
 .dashboard-theme {
   --background: #FAFAFC;
   --foreground: #1E1B4B;
+  --card: #FFFFFF;
   --card-foreground: #1E1B4B;
   --primary: #6366F1;
   --primary-hover: #4F46E5;
   --primary-light: #A5B4FC;
+  --primary-foreground: #FFFFFF;
   --secondary: #F1F0FB;
   --secondary-foreground: #1E1B4B;
   --muted: #F5F4FC;
   --muted-foreground: #64748B;
   --accent: #10B981;
   --accent-foreground: #FFFFFF;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
   --success: #10B981;
+  --warning: #D97706;
+  --info: #2563EB;
   --border: #E9E9F2;
   --input: #E9E9F2;
   --ring: #6366F1;
