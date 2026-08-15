@@ -38,8 +38,17 @@ animações sutis, sem dark mode nesta leva.
 
 ## 3. Paleta (light mode, `app/globals.css`)
 
-Substitui os tokens atuais no bloco `:root` (mantém os mesmos nomes de variável, só troca
-valores, para não quebrar nenhum consumidor):
+**Correção de mecanismo (pós spec-review):** `--primary`, `--secondary`, `--muted`, `--accent`
+etc. hoje vivem num único bloco `:root` — global. `components/landing/*` (sales-showcase,
+features-section, control-section, how-it-works-section, mini-line-chart, pricing-showcase)
+usa esses mesmos tokens (`bg-primary`, `text-accent`, ...) para o verde da marca. Sobrescrever
+`:root` pintaria a landing/auth/checkout de índigo também, o que contradiz a seção 2. Por isso,
+os novos valores **não substituem `:root`** — são definidos num seletor `.dashboard-theme`
+(mesmo bloco de nomes de variável, valores novos) com especificidade maior que `:root`,
+aplicado na `<div>` raiz de `app/dashboard/layout.tsx`. Fora dessa classe (landing, auth,
+checkout), os tokens de `:root` continuam valendo sem mudança.
+
+Tokens dentro de `.dashboard-theme` (sobrescrevem os de `:root` só para essa subárvore):
 
 | Token | Valor atual | Novo valor |
 |---|---|---|
@@ -72,19 +81,34 @@ usando `--success`/`--destructive` diretamente, não o `--primary`, então não 
 
 ## 4. Acabamento de componentes
 
-Novos tokens de raio e sombra, adicionados ao bloco `:root` / `@theme inline`:
+**Correção pós spec-review:** o raio já bate com o alvo "soft" hoje — `Card` já usa
+`rounded-2xl` (16px, `components/ui/card.tsx:9`) e `Button`/`Input` já usam `rounded-[10px]`
+(`components/ui/button.tsx:7`, `components/ui/input.tsx:13`). Não há mudança de raio a fazer.
 
-- `--radius-card: 16px` — usado em `Card` e containers de página
-- `--radius-control: 10px` — usado em `Button`, `Input`, `Select`, `Badge`
-- Sombra de card: `0 4px 16px rgb(99 102 241 / 0.08)`, aplicada como `shadow-sm`
-  customizado (não sombra do Tailwind padrão, que é cinza neutra)
-- Sombra de botão primário: `0 4px 12px rgb(99 102 241 / 0.20)`, só no `variant="default"`
-- Borda: `1px solid var(--border)` em cards e inputs — mantém o traço fino já usado hoje, só
-  muda a cor do token
+`components/ui/*` é **compartilhado com landing/auth/checkout** (confirmado:
+`app/login`, `app/checkout`, `app/definir-senha`, `app/esqueci-senha`, `app/pagamento/*` e
+`components/landing/*` importam `Button`/`Card`/`Input` de `components/ui`). Por isso a sombra
+— que é nova, não existe hoje — não pode virar cor fixa dentro desses componentes (vazaria
+índigo pra fora do escopo). Mesmo tratamento da seção 3: vira uma CSS custom property com
+default neutro em `:root` e valor índigo só dentro de `.dashboard-theme`:
 
-Cada componente em `components/ui/*` é ajustado individualmente (radius + sombra), não uma
-sobrescrita global via CSS — mantém o padrão shadcn de componente autocontido que o projeto já
-segue.
+```css
+/* :root — default, usado fora do dashboard */
+--shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.05);   /* equivalente ao shadow-sm atual */
+--shadow-button-primary: none;
+
+/* dentro de .dashboard-theme */
+--shadow-card: 0 4px 16px rgb(99 102 241 / 0.08);
+--shadow-button-primary: 0 4px 12px rgb(99 102 241 / 0.20);
+```
+
+`components/ui/card.tsx` troca a classe `shadow-sm` por `shadow-[var(--shadow-card)]`.
+`components/ui/button.tsx` adiciona `shadow-[var(--shadow-button-primary)]` só no
+`variant: "primary"`. Fora do `.dashboard-theme` o resultado visual não muda (mesma sombra de
+hoje); dentro, fica o índigo suave.
+
+Borda (`border-border`/`border-input`) já é dirigida por CSS variable — herda a cor nova
+automaticamente dentro de `.dashboard-theme`, sem tocar em `components/ui/*` pra isso.
 
 ## 5. Tipografia
 

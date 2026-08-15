@@ -23,6 +23,8 @@
   --border: #E7E5E4;
   --input: #E7E5E4;
   --ring: #0E7C5D;
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-button-primary: none;
 }
 
 @theme inline {
@@ -77,6 +79,28 @@
     --input: #262B28;
     --ring: #3FAE85;
   }
+}
+
+.dashboard-theme {
+  --background: #FAFAFC;
+  --foreground: #1E1B4B;
+  --card-foreground: #1E1B4B;
+  --primary: #6366F1;
+  --primary-hover: #4F46E5;
+  --primary-light: #A5B4FC;
+  --secondary: #F1F0FB;
+  --secondary-foreground: #1E1B4B;
+  --muted: #F5F4FC;
+  --muted-foreground: #64748B;
+  --accent: #10B981;
+  --accent-foreground: #FFFFFF;
+  --success: #10B981;
+  --border: #E9E9F2;
+  --input: #E9E9F2;
+  --ring: #6366F1;
+  --shadow-card: 0 4px 16px rgb(99 102 241 / 0.08);
+  --shadow-button-primary: 0 4px 12px rgb(99 102 241 / 0.20);
+  --font-sans: var(--font-plus-jakarta);
 }
 
 body {
