@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { pdf } from "@react-pdf/renderer";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Select } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { ComparisonChart } from "@/components/relatorios/comparison-chart";
+import { ReportPdfDocument } from "@/components/relatorios/report-pdf-document";
+import { downloadBlob } from "@/lib/relatorios/download-file";
 import { cn } from "@/lib/utils";
 import type { MonthlyMetric, TopProduct } from "@/lib/relatorios/monthly-report";
 
@@ -42,6 +47,20 @@ function ChangeBadge({ value }: { value: number | null }) {
 export default function ReportView({ periodLabel, monthsCount, months, topProducts }: ReportViewProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const hasData = months.some((m) => m.salesCount > 0);
+
+  async function handleDownloadPdf() {
+    setIsGeneratingPdf(true);
+    try {
+      const blob = await pdf(
+        <ReportPdfDocument periodLabel={periodLabel} months={months} topProducts={topProducts} />
+      ).toBlob();
+      downloadBlob(blob, `relatorio-${periodLabel.replace(/\s+/g, "-")}.pdf`);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }
 
   const totalRevenue = months.reduce((sum, m) => sum + m.revenue, 0);
   const totalProfit = months.reduce((sum, m) => sum + m.profit, 0);
@@ -84,21 +103,34 @@ export default function ReportView({ periodLabel, monthsCount, months, topProduc
           <h1 className="text-2xl font-semibold text-foreground">Relatórios</h1>
           <p className="text-muted-foreground">Comparativo de {periodLabel}.</p>
         </div>
-        <div className="w-56">
-          <label htmlFor="monthsCount" className="mb-1.5 block text-sm font-medium text-foreground">
-            Comparar últimos N meses
-          </label>
-          <Select
-            id="monthsCount"
-            value={monthsCount}
-            onChange={(event) => router.push(`${pathname}?months=${event.target.value}`)}
-          >
-            {Array.from({ length: 11 }, (_, i) => i + 2).map((n) => (
-              <option key={n} value={n}>
-                {n} meses
-              </option>
-            ))}
-          </Select>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-56">
+            <label htmlFor="monthsCount" className="mb-1.5 block text-sm font-medium text-foreground">
+              Comparar últimos N meses
+            </label>
+            <Select
+              id="monthsCount"
+              value={monthsCount}
+              onChange={(event) => router.push(`${pathname}?months=${event.target.value}`)}
+            >
+              {Array.from({ length: 11 }, (_, i) => i + 2).map((n) => (
+                <option key={n} value={n}>
+                  {n} meses
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!hasData || isGeneratingPdf}
+              onClick={handleDownloadPdf}
+            >
+              {isGeneratingPdf ? "Gerando..." : "Baixar PDF"}
+            </Button>
+          </div>
         </div>
       </div>
 
