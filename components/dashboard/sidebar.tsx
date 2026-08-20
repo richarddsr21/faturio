@@ -9,6 +9,7 @@ import {
   Boxes,
   ShoppingCart,
   Target,
+  FileBarChart,
   Settings,
   Menu,
   X,
@@ -24,6 +25,7 @@ const links = [
   { href: "/dashboard/estoque", label: "Estoque", icon: Boxes },
   { href: "/dashboard/vendas", label: "Vendas", icon: ShoppingCart },
   { href: "/dashboard/metas", label: "Metas", icon: Target },
+  { href: "/dashboard/relatorios", label: "Relatórios", icon: FileBarChart },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
 ];
 
