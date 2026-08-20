@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ComparisonChart } from "@/components/relatorios/comparison-chart";
 import { ReportPdfDocument } from "@/components/relatorios/report-pdf-document";
+import { buildReportXml } from "@/lib/relatorios/export-xml";
 import { downloadBlob } from "@/lib/relatorios/download-file";
 import { cn } from "@/lib/utils";
 import type { MonthlyMetric, TopProduct } from "@/lib/relatorios/monthly-report";
@@ -60,6 +61,14 @@ export default function ReportView({ periodLabel, monthsCount, months, topProduc
     } finally {
       setIsGeneratingPdf(false);
     }
+  }
+
+  function handleDownloadXml() {
+    const xml = buildReportXml(periodLabel, months, topProducts);
+    downloadBlob(
+      new Blob([xml], { type: "application/xml" }),
+      `relatorio-${periodLabel.replace(/\s+/g, "-")}.xml`
+    );
   }
 
   const totalRevenue = months.reduce((sum, m) => sum + m.revenue, 0);
@@ -129,6 +138,9 @@ export default function ReportView({ periodLabel, monthsCount, months, topProduc
               onClick={handleDownloadPdf}
             >
               {isGeneratingPdf ? "Gerando..." : "Baixar PDF"}
+            </Button>
+            <Button type="button" variant="secondary" size="sm" disabled={!hasData} onClick={handleDownloadXml}>
+              Baixar XML
             </Button>
           </div>
         </div>
