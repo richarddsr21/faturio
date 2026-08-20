@@ -486,7 +486,7 @@ export function ComparisonChart({ data }: { data: ComparisonChartPoint[] }) {
           <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={12} />
           <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
           <Tooltip
-            formatter={(value: number) => formatCurrency(value)}
+            formatter={(value) => formatCurrency(Number(value))}
             // Cor literal, não var(--color-*): o tooltip do Recharts não herda os
             // tokens CSS corretamente (mesmo problema já visto em revenue-chart.tsx).
             contentStyle={{
