@@ -8,7 +8,7 @@ export const settingsFieldsBaseSchema = z.object({
   adminFee: z.number().min(0).max(0.9999, "Informe um percentual menor que 100%"),
   cardFee: z.number().min(0).max(0.9999, "Informe um percentual menor que 100%"),
   trafficCost: z.number().min(0, "Não pode ser negativo"),
-  desiredMargin: z.number().min(0).max(0.9999, "Informe um percentual menor que 100%"),
+  desiredMargin: z.number().min(0).max(999.9999, "Valor muito alto"),
 });
 
 export type SettingsFieldsValues = z.infer<typeof settingsFieldsBaseSchema>;
@@ -29,7 +29,7 @@ export const settingsFieldsSchema = settingsFieldsBaseSchema.refine(feesBelow100
 export const settingsFormFieldsBaseSchema = settingsFieldsBaseSchema.extend({
   adminFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%"),
   cardFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%"),
-  desiredMargin: z.number().min(0).max(99.99, "Informe um percentual menor que 100%"),
+  desiredMargin: z.number().min(0).max(99999.99, "Valor muito alto"),
 });
 
 export type SettingsFormFieldsValues = z.infer<typeof settingsFormFieldsBaseSchema>;

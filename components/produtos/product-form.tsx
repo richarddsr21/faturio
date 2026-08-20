@@ -16,7 +16,7 @@ import { Alert } from "@/components/ui/alert";
 // armazenada no banco (0.3). `productSchema` continua sendo a forma canônica (fração), usada
 // pela Server Action, que revalida de novo; aqui só sobrescrevemos o range desses campos.
 const formSchema = productSchema.extend({
-  desiredMargin: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
+  desiredMargin: z.number().min(0).max(99999.99, "Valor muito alto").optional(),
   adminFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
   cardFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
 });

@@ -8,7 +8,7 @@ export const productSchema = z.object({
   cost: z.number().min(0, "Não pode ser negativo"),
   entryShipping: z.number().min(0, "Não pode ser negativo").default(0),
   currentPrice: z.number().min(0, "Não pode ser negativo").optional(),
-  desiredMargin: z.number().min(0).max(0.9999).optional(),
+  desiredMargin: z.number().min(0).max(999.9999).optional(),
   minimumStock: z.number().int().min(0).default(0),
   initialStock: z.number().int().min(0).optional(),
   // Custos que por padrão vêm de `settings` (globais), mas podem ser sobrescritos por

@@ -16,7 +16,7 @@ const formSchema = z.object({
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020),
   revenueGoal: z.number().min(0, "Informe uma meta válida"),
-  desiredMargin: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
+  desiredMargin: z.number().min(0).max(99999.99, "Valor muito alto").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;

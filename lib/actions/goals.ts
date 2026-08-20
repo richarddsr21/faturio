@@ -7,7 +7,7 @@ const goalSchema = z.object({
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020),
   revenueGoal: z.number().min(0, "Informe uma meta válida"),
-  desiredMargin: z.number().min(0).max(0.9999).optional(),
+  desiredMargin: z.number().min(0).max(999.9999).optional(),
 });
 
 export interface GoalActionResult {
