@@ -148,8 +148,8 @@ describe("rankTopProducts", () => {
     const result = rankTopProducts(items, names, 2);
 
     expect(result).toEqual([
-      { productId: "b", name: "Produto B", quantity: 10, revenue: 200 },
       { productId: "a", name: "Produto A", quantity: 15, revenue: 150 },
+      { productId: "b", name: "Produto B", quantity: 10, revenue: 200 },
     ]);
   });
 
