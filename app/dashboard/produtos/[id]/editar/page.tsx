@@ -17,7 +17,7 @@ export default async function EditarProdutoPage({
     supabase
       .from("products")
       .select(
-        "id, name, sku, category, supplier, cost, entry_shipping, current_price, desired_margin, minimum_stock, packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee"
+        "id, name, sku, category, supplier, cost, entry_shipping, current_price, desired_margin, minimum_stock, stock_quantity, packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee"
       )
       .eq("id", id)
       .single(),
@@ -49,6 +49,7 @@ export default async function EditarProdutoPage({
           currentPrice: product.current_price !== null ? Number(product.current_price) : null,
           desiredMargin: product.desired_margin !== null ? Number(product.desired_margin) : null,
           minimumStock: product.minimum_stock,
+          stockQuantity: product.stock_quantity,
           packagingCost: product.packaging_cost !== null ? Number(product.packaging_cost) : null,
           shippingCost: product.shipping_cost !== null ? Number(product.shipping_cost) : null,
           giftCost: product.gift_cost !== null ? Number(product.gift_cost) : null,

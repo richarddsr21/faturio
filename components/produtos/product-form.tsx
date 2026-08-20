@@ -44,6 +44,7 @@ export interface ProductFormProduct {
   currentPrice: number | null;
   desiredMargin: number | null;
   minimumStock: number;
+  stockQuantity: number;
   // Overrides opcionais dos custos que por padrão vêm de `settings`; null = usa o padrão.
   packagingCost: number | null;
   shippingCost: number | null;
@@ -80,6 +81,7 @@ export function ProductForm({
           desiredMargin:
             product.desiredMargin !== null ? fractionToPercent(product.desiredMargin) : undefined,
           minimumStock: product.minimumStock,
+          currentStock: product.stockQuantity,
           packagingCost: product.packagingCost ?? undefined,
           shippingCost: product.shippingCost ?? undefined,
           giftCost: product.giftCost ?? undefined,
@@ -330,7 +332,7 @@ export function ProductForm({
       )}
 
       <div className="grid grid-cols-2 gap-4">
-        {!product && (
+        {!product ? (
           <div>
             <label htmlFor="initialStock" className="mb-1.5 block text-sm font-medium text-foreground">
               Estoque inicial
@@ -341,6 +343,21 @@ export function ProductForm({
               step="1"
               {...register("initialStock", { setValueAs: optionalNumber })}
             />
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="currentStock" className="mb-1.5 block text-sm font-medium text-foreground">
+              Estoque atual
+            </label>
+            <Input
+              id="currentStock"
+              type="number"
+              step="1"
+              {...register("currentStock", { setValueAs: optionalNumber })}
+            />
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Alterar aqui registra um ajuste de estoque.
+            </p>
           </div>
         )}
         <div>

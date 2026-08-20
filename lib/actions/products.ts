@@ -94,6 +94,22 @@ export async function updateProduct(
     return { success: false, error: "Sessão expirada. Faça login novamente." };
   }
 
+  let stockDelta = 0;
+  if (parsed.data.currentStock !== undefined) {
+    const { data: current, error: currentError } = await supabase
+      .from("products")
+      .select("stock_quantity")
+      .eq("id", productId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (currentError || !current) {
+      return { success: false, error: "Produto não encontrado." };
+    }
+
+    stockDelta = parsed.data.currentStock - current.stock_quantity;
+  }
+
   const { error } = await supabase
     .from("products")
     .update({
@@ -111,6 +127,7 @@ export async function updateProduct(
       gift_cost: parsed.data.giftCost ?? null,
       admin_fee: parsed.data.adminFee ?? null,
       card_fee: parsed.data.cardFee ?? null,
+      ...(stockDelta !== 0 ? { stock_quantity: parsed.data.currentStock } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", productId)
@@ -118,6 +135,16 @@ export async function updateProduct(
 
   if (error) {
     return { success: false, error: "Não foi possível salvar o produto. Tente novamente." };
+  }
+
+  if (stockDelta !== 0) {
+    await supabase.from("inventory_movements").insert({
+      user_id: user.id,
+      product_id: productId,
+      type: "adjustment",
+      quantity: stockDelta,
+      reason: "Ajuste manual via edição do produto",
+    });
   }
 
   redirect("/dashboard/produtos");
