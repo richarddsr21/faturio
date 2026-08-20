@@ -16,7 +16,7 @@ export default function Image() {
           alignItems: "flex-start",
           justifyContent: "center",
           padding: "80px",
-          backgroundColor: "#FAFAF9",
+          backgroundColor: "#FAFAFC",
         }}
       >
         <div
@@ -25,7 +25,7 @@ export default function Image() {
             width: 88,
             height: 8,
             borderRadius: 4,
-            backgroundColor: "#3FAE85",
+            backgroundColor: "#10B981",
             marginBottom: 40,
           }}
         />
@@ -34,7 +34,7 @@ export default function Image() {
             display: "flex",
             fontSize: 96,
             fontWeight: 700,
-            color: "#0E7C5D",
+            color: "#6366F1",
             letterSpacing: "-0.02em",
           }}
         >
@@ -45,7 +45,7 @@ export default function Image() {
             display: "flex",
             marginTop: 24,
             fontSize: 36,
-            color: "#1C1917",
+            color: "#1E1B4B",
             maxWidth: 900,
           }}
         >

@@ -117,6 +117,41 @@
   --font-sans: var(--font-plus-jakarta);
 }
 
+/*
+ * Mesmo tratamento de .dashboard-theme (autocontido, imune ao dark mode) aplicado
+ * a todas as rotas públicas (app/(public)/**: landing, login, onboarding, checkout,
+ * pagamento, legais). Valores duplicados de propósito em vez de reaproveitar
+ * .dashboard-theme: public e dashboard podem divergir no futuro (ex. dark mode
+ * adotado só num dos dois) e cada escopo deve poder mudar sem afetar o outro.
+ */
+.public-theme {
+  --background: #FAFAFC;
+  --foreground: #1E1B4B;
+  --card: #FFFFFF;
+  --card-foreground: #1E1B4B;
+  --primary: #6366F1;
+  --primary-hover: #4F46E5;
+  --primary-light: #A5B4FC;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F0FB;
+  --secondary-foreground: #1E1B4B;
+  --muted: #F5F4FC;
+  --muted-foreground: #64748B;
+  --accent: #10B981;
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --success: #10B981;
+  --warning: #D97706;
+  --info: #2563EB;
+  --border: #E9E9F2;
+  --input: #E9E9F2;
+  --ring: #6366F1;
+  --shadow-card: 0 4px 16px rgb(99 102 241 / 0.08);
+  --shadow-button-primary: 0 4px 12px rgb(99 102 241 / 0.20);
+  --font-sans: var(--font-plus-jakarta);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
