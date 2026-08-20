@@ -35,30 +35,66 @@ export default async function VendasPage() {
       </div>
 
       {sales && sales.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Pagamento</TableHead>
-              <TableHead>Faturamento</TableHead>
-              <TableHead>Lucro</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className="flex flex-col gap-3 sm:hidden">
             {sales.map((sale) => (
-              <TableRow key={sale.id}>
-                <TableCell>{new Date(sale.sale_date).toLocaleDateString("pt-BR")}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {paymentMethodLabels[sale.payment_method] ?? sale.payment_method}
-                </TableCell>
-                <TableCell className="tabular-nums">{formatCurrency(Number(sale.gross_revenue))}</TableCell>
-                <TableCell className="tabular-nums text-success">
-                  {formatCurrency(Number(sale.net_profit))}
-                </TableCell>
-              </TableRow>
+              <div
+                key={sale.id}
+                className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-foreground">
+                    {new Date(sale.sale_date).toLocaleDateString("pt-BR")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {paymentMethodLabels[sale.payment_method] ?? sale.payment_method}
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Faturamento</p>
+                    <p className="tabular-nums text-sm text-foreground">
+                      {formatCurrency(Number(sale.gross_revenue))}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Lucro</p>
+                    <p className="tabular-nums text-sm text-success">
+                      {formatCurrency(Number(sale.net_profit))}
+                    </p>
+                  </div>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+
+          <div className="hidden sm:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Pagamento</TableHead>
+                  <TableHead>Faturamento</TableHead>
+                  <TableHead>Lucro</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell>{new Date(sale.sale_date).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {paymentMethodLabels[sale.payment_method] ?? sale.payment_method}
+                    </TableCell>
+                    <TableCell className="tabular-nums">{formatCurrency(Number(sale.gross_revenue))}</TableCell>
+                    <TableCell className="tabular-nums text-success">
+                      {formatCurrency(Number(sale.net_profit))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       ) : (
         <p className="text-sm text-muted-foreground">
           Nenhuma venda registrada ainda —{" "}

@@ -69,8 +69,11 @@ export default function TermosDeUsoPage() {
           <h2 className="mb-2 text-lg font-semibold text-foreground">6. Cancelamento e exclusão de conta</h2>
           <p>
             Para solicitar o cancelamento e a exclusão da sua conta e dos seus dados, entre em
-            contato com nosso suporte por e-mail. O fluxo self-service de exclusão poderá ser
-            disponibilizado futuramente.
+            contato com nosso suporte pelo e-mail{" "}
+            <a href="mailto:richarddsr21@gmail.com" className="underline">
+              richarddsr21@gmail.com
+            </a>
+            . O fluxo self-service de exclusão poderá ser disponibilizado futuramente.
           </p>
         </section>
 

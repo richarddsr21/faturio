@@ -31,7 +31,8 @@ const faqs = [
   },
   {
     question: "Como funciona o suporte?",
-    answer: "Nosso suporte é feito por e-mail, e responde o mais rápido possível.",
+    answer:
+      "Nosso suporte é feito por e-mail (richarddsr21@gmail.com), e responde o mais rápido possível.",
   },
 ];
 

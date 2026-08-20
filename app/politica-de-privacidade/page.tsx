@@ -73,8 +73,11 @@ export default function PoliticaDePrivacidadePage() {
           <h2 className="mb-2 text-lg font-semibold text-foreground">6. Exclusão de conta</h2>
           <p>
             Para solicitar a exclusão da sua conta e dos seus dados, entre em contato com nosso
-            suporte por e-mail. Um fluxo de exclusão self-service poderá ser disponibilizado
-            futuramente.
+            suporte pelo e-mail{" "}
+            <a href="mailto:richarddsr21@gmail.com" className="underline">
+              richarddsr21@gmail.com
+            </a>
+            . Um fluxo de exclusão self-service poderá ser disponibilizado futuramente.
           </p>
         </section>
 

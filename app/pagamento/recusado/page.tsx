@@ -14,6 +14,12 @@ export default function PagamentoRecusadoPage() {
       <Button asChild size="lg">
         <Link href="/checkout">Tentar novamente</Link>
       </Button>
+      <p className="text-sm text-muted-foreground">
+        Precisa de ajuda?{" "}
+        <a href="mailto:richarddsr21@gmail.com" className="underline">
+          Fale com o suporte
+        </a>
+      </p>
     </main>
   );
 }
