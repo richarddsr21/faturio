@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { AlertTriangle, Search } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { StockMovementForm } from "@/components/estoque/stock-movement-form";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,13 @@ export interface StockListProduct {
 
 export function StockList({ products }: { products: StockListProduct[] }) {
   const [openProductId, setOpenProductId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return products;
+    return products.filter((product) => product.name.toLowerCase().includes(query));
+  }, [products, search]);
 
   if (products.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhum produto cadastrado ainda.</p>;
@@ -23,8 +31,23 @@ export function StockList({ products }: { products: StockListProduct[] }) {
 
   return (
     <>
+      <div className="relative max-w-sm">
+        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Buscar produto pelo nome..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {filteredProducts.length === 0 && (
+        <p className="text-sm text-muted-foreground">Nenhum produto encontrado para &quot;{search}&quot;.</p>
+      )}
+
       <div className="flex flex-col gap-3 sm:hidden">
-        {products.map((product) => {
+        {filteredProducts.map((product) => {
           const isLow = product.stock_quantity < product.minimum_stock;
           const isOpen = openProductId === product.id;
           return (
@@ -73,7 +96,7 @@ export function StockList({ products }: { products: StockListProduct[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => {
+            {filteredProducts.map((product) => {
               const isLow = product.stock_quantity < product.minimum_stock;
               return (
                 <Fragment key={product.id}>
