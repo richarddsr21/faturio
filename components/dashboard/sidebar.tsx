@@ -15,6 +15,7 @@ import {
   X,
   LogOut,
   CircleHelp,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/actions/auth";
@@ -60,6 +61,18 @@ function SidebarLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function AdminLink() {
+  return (
+    <Link
+      href="/admin"
+      className="flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      <ShieldCheck className="h-4 w-4 shrink-0" />
+      Admin
+    </Link>
+  );
+}
+
 function SupportLink() {
   return (
     <a
@@ -86,7 +99,7 @@ function SignOutButton() {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -109,6 +122,7 @@ export function Sidebar() {
         <div className="flex flex-col gap-1 border-b border-border px-6 py-4 md:hidden">
           <SidebarLinks onNavigate={() => setOpen(false)} />
           <div className="mt-1 border-t border-border pt-1">
+            {isAdmin && <AdminLink />}
             <SupportLink />
             <SignOutButton />
           </div>
@@ -121,6 +135,7 @@ export function Sidebar() {
         <div className="flex flex-1 flex-col justify-between">
           <SidebarLinks />
           <div className="flex flex-col gap-1">
+            {isAdmin && <AdminLink />}
             <SupportLink />
             <SignOutButton />
           </div>

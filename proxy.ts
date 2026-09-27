@@ -35,6 +35,12 @@ export async function proxy(request: NextRequest) {
     return loginResponse;
   }
 
+  // /admin só exige login aqui. A checagem de role acontece em cada página e Server Action
+  // (lib/admin/require-admin.ts); a conta admin não precisa de assinatura nem onboarding.
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    return response;
+  }
+
   const { data: subscriptions } = await supabase
     .from("subscriptions")
     .select("status")
@@ -68,5 +74,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };

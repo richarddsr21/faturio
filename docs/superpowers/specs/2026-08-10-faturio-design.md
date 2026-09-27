@@ -59,7 +59,7 @@ Camadas de proteção (defesa em profundidade):
    lugares, ambos server-only, nunca expostos ao client:
    - o handler do webhook do Mercado Pago (precisa criar o `auth.users` do cliente antes de
      ele ter sessão);
-   - a futura área administrativa (seção 11).
+   - a área administrativa (seção 11), sempre depois de `getAdminUser()`/`requireAdmin()`.
 
 4. **Teste automatizado de isolamento** (crítico, seção 40.6) — não é apenas verificado
    manualmente: existe um teste de integração que autentica dois usuários reais (`User A`,
@@ -324,12 +324,45 @@ query de dashboard precisa de `WHERE user_id = ...` manual, mas as Server Action
 qualquer forma como defesa em profundidade). Visual: cards limpos, tipografia elegante,
 Recharts para gráficos, espaçamento generoso, transições suaves via Framer Motion.
 
-## 11. Administração (preparado, não construído agora)
+## 11. Administração
 
-`profiles.role` (`user`/`admin`) já modelado. Nenhuma UI de admin nesta primeira entrega —
-apenas a estrutura de dados e a separação de responsabilidade (rotas de admin, se
-construídas depois, vivem fora de `/dashboard` e usam `service_role` de forma isolada,
-nunca misturadas com as Server Actions do cliente comum).
+Área em `/admin`, fora de `/dashboard`, para o dono do SaaS operar os clientes.
+
+**Conta única.** Existe no máximo uma conta admin, garantido pelo banco: índice único
+parcial `profiles_single_admin` em `profiles (role) where role = 'admin'`. A conta é
+definida pela migration `20260927000002_set_admin_account.sql` (ou manualmente no SQL
+Editor); não há tela nem Server Action que altere `role`.
+
+**Role imutável pelo cliente.** O role `authenticated` só tem `UPDATE` na coluna
+`profiles.name` (migration `20260927000000_admin_single_account.sql`) — sem isso, a policy
+`profiles_update_own` permitiria a qualquer cliente se promover via API.
+
+**Checagem de acesso** (`lib/admin/require-admin.ts`, `server-only`):
+- `getAdminUser()` lê a sessão no servidor e o `role` de `profiles` com o client da sessão.
+- Toda página de `/admin` chama `requireAdmin()` (não-admin recebe 404, sem revelar a
+  rota); o layout também chama, só para não exibir o menu de admin num 404. Layouts não
+  re-renderizam na navegação, então a checagem no layout nunca é a única.
+- Toda Server Action de `lib/actions/admin.ts` chama `getAdminUser()` antes de usar
+  `service_role`. O input só identifica o alvo (cliente, checkout), nunca o admin.
+- `proxy.ts` só exige login em `/admin`; a conta admin não passa pelos gates de
+  assinatura e onboarding.
+
+**Funcionalidades:**
+- Visão geral: totais, conversão do checkout, gráficos mensais (receita, novos clientes,
+  conversão; fuso America/Sao_Paulo) e a lista "Precisam de atenção" — clientes com acesso
+  ativo que nunca entraram, não concluíram o onboarding ou não entram há 30+ dias.
+  Cálculos puros em `lib/admin/metrics.ts`.
+- Clientes: busca, filtro por acesso e modal de detalhes com bloquear/reativar, liberar
+  acesso manual (assinatura ativa com valor 0) e reenviar link de acesso (convite para
+  quem nunca confirmou o e-mail, redefinição de senha para quem já confirmou).
+- Pagamentos: checkouts recentes; os pendentes podem ser removidos. Se um checkout
+  removido for pago depois, o webhook não o encontra e o acesso é liberado manualmente.
+
+**Privacidade.** Do negócio de cada cliente o admin vê só contagens (produtos, vendas),
+nunca os registros. Não existe "entrar como o cliente".
+
+**Auditoria.** Toda ação de escrita grava em `admin_audit_log` (RLS sem policies: só
+`service_role` lê e escreve), incluindo uma cópia dos checkouts removidos.
 
 ## 12. E-mails transacionais (Resend)
 
@@ -364,7 +397,6 @@ requer revisão profissional antes de publicação. Exclusão de conta: fluxo de
 
 ## 15. Fora de escopo desta entrega (mencionado no prompt como "futuro")
 
-- UI de administração.
 - Envio de e-mails de aviso de vencimento (não aplicável a acesso vitalício).
 - Emissão de nota fiscal.
 - Domínio definitivo (placeholder usado até o cliente registrar um).
