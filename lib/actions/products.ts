@@ -59,7 +59,7 @@ export async function createProduct(
   }
 
   if (initialStock > 0) {
-    const { error: movementError } = await supabase.from("inventory_movements").insert({
+    await supabase.from("inventory_movements").insert({
       user_id: user.id,
       product_id: product.id,
       type: "initial",
@@ -68,14 +68,13 @@ export async function createProduct(
       reason: "Estoque inicial",
     });
 
-    if (movementError) {
-      // Produto já foi criado; segue para a lista mesmo com o estoque inicial não
-      // registrado — o usuário pode ajustar o estoque manualmente por lá.
-      redirect("/dashboard/produtos");
-    }
+    // Se falhar, o produto já foi criado mesmo assim, só sem o estoque inicial registrado —
+    // o usuário pode ajustar o estoque manualmente pela tela de Estoque.
   }
 
-  redirect("/dashboard/produtos");
+  // Sem redirect: quem chama decide para onde ir (a página de novo produto volta para a
+  // lista; o modal da Visão geral continua aberto).
+  return { success: true, productId: product.id };
 }
 
 export async function updateProduct(

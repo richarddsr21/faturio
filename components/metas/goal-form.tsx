@@ -24,9 +24,15 @@ type FormValues = z.infer<typeof formSchema>;
 export function GoalForm({
   defaultMonth,
   defaultYear,
+  embedded = false,
+  onSaved,
 }: {
   defaultMonth: number;
   defaultYear: number;
+  /** Sem o Card em volta — para usar dentro de um modal. */
+  embedded?: boolean;
+  /** Chamado após salvar a meta, no lugar do aviso de sucesso. */
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -51,53 +57,57 @@ export function GoalForm({
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
       return;
     }
-    setSuccess(true);
     router.refresh();
+    if (onSaved) onSaved();
+    else setSuccess(true);
   }
 
+  const form = (
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-wrap items-end gap-4">
+      <div className="w-24">
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Mês</label>
+        <Input type="number" step="1" min={1} max={12} {...register("month", { valueAsNumber: true })} />
+      </div>
+      <div className="w-28">
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Ano</label>
+        <Input type="number" step="1" {...register("year", { valueAsNumber: true })} />
+      </div>
+      <div className="w-44">
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Meta (R$)</label>
+        <Input
+          type="number"
+          step="0.01"
+          invalid={!!errors.revenueGoal}
+          {...register("revenueGoal", { valueAsNumber: true })}
+        />
+      </div>
+      <div className="w-44">
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Margem desejada (%)</label>
+        <Input type="number" step="0.01" {...register("desiredMargin", { setValueAs: optionalNumber })} />
+      </div>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Salvando..." : "Salvar meta"}
+      </Button>
+      {errors.revenueGoal && (
+        <p className="basis-full text-sm text-destructive">{errors.revenueGoal.message}</p>
+      )}
+      {serverError && (
+        <div className="basis-full">
+          <Alert variant="destructive">{serverError}</Alert>
+        </div>
+      )}
+      {success && (
+        <div className="basis-full">
+          <Alert>Meta salva com sucesso.</Alert>
+        </div>
+      )}
+    </form>
+  );
+
+  if (embedded) return form;
   return (
     <Card>
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-wrap items-end gap-4">
-          <div className="w-24">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Mês</label>
-            <Input type="number" step="1" min={1} max={12} {...register("month", { valueAsNumber: true })} />
-          </div>
-          <div className="w-28">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Ano</label>
-            <Input type="number" step="1" {...register("year", { valueAsNumber: true })} />
-          </div>
-          <div className="w-44">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Meta (R$)</label>
-            <Input
-              type="number"
-              step="0.01"
-              invalid={!!errors.revenueGoal}
-              {...register("revenueGoal", { valueAsNumber: true })}
-            />
-          </div>
-          <div className="w-44">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Margem desejada (%)</label>
-            <Input type="number" step="0.01" {...register("desiredMargin", { setValueAs: optionalNumber })} />
-          </div>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Salvando..." : "Salvar meta"}
-          </Button>
-          {errors.revenueGoal && (
-            <p className="basis-full text-sm text-destructive">{errors.revenueGoal.message}</p>
-          )}
-          {serverError && (
-            <div className="basis-full">
-              <Alert variant="destructive">{serverError}</Alert>
-            </div>
-          )}
-          {success && (
-            <div className="basis-full">
-              <Alert>Meta salva com sucesso.</Alert>
-            </div>
-          )}
-        </form>
-      </CardContent>
+      <CardContent className="pt-6">{form}</CardContent>
     </Card>
   );
 }

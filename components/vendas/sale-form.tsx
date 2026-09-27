@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,7 +36,15 @@ export interface SaleFormProduct {
   currentPrice: number;
 }
 
-export function SaleForm({ products }: { products: SaleFormProduct[] }) {
+export function SaleForm({
+  products,
+  onRegistered,
+}: {
+  products: SaleFormProduct[];
+  /** Chamado após registrar a venda. Sem ele, a página volta para a lista de vendas. */
+  onRegistered?: () => void;
+}) {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
@@ -64,7 +73,10 @@ export function SaleForm({ products }: { products: SaleFormProduct[] }) {
     const result = await registerSale(values);
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
+      return;
     }
+    if (onRegistered) onRegistered();
+    else router.push("/dashboard/vendas");
   }
 
   return (

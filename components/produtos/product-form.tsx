@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,10 +57,14 @@ export interface ProductFormProduct {
 export function ProductForm({
   product,
   settings,
+  onCreated,
 }: {
   product?: ProductFormProduct;
   settings: ProductFormSettings;
+  /** Chamado após criar um produto. Sem ele, a página volta para a lista de produtos. */
+  onCreated?: () => void;
 }) {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
@@ -143,6 +148,11 @@ export function ProductForm({
 
     if (!result.success) {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
+      return;
+    }
+    if (!product) {
+      if (onCreated) onCreated();
+      else router.push("/dashboard/produtos");
     }
   }
 

@@ -3,32 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Package,
-  Boxes,
-  ShoppingCart,
-  Target,
-  FileBarChart,
-  Settings,
-  Menu,
-  X,
-  LogOut,
-  CircleHelp,
-  ShieldCheck,
-} from "lucide-react";
+import { Menu, X, LogOut, CircleHelp, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/actions/auth";
-
-const links = [
-  { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/dashboard/produtos", label: "Produtos", icon: Package },
-  { href: "/dashboard/estoque", label: "Estoque", icon: Boxes },
-  { href: "/dashboard/vendas", label: "Vendas", icon: ShoppingCart },
-  { href: "/dashboard/metas", label: "Metas", icon: Target },
-  { href: "/dashboard/relatorios", label: "Relatórios", icon: FileBarChart },
-  { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
-];
+import { dashboardNavItems as links } from "@/components/dashboard/nav-items";
 
 function SidebarLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();

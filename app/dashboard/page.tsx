@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
+import { QuickAccess } from "@/components/dashboard/quick-access";
 import { calculateGoalProgress } from "@/lib/finance/goals";
 import { calculateStockPotential } from "@/lib/finance/stock-potential";
 import { calculateAverageTicket, calculateMonthProjection } from "@/lib/finance/projection";
@@ -76,9 +77,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Visão geral</h1>
-        <p className="text-muted-foreground">Bem-vindo, {user?.email}.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold text-foreground">Visão geral</h1>
+          <p className="truncate text-muted-foreground">Bem-vindo, {user?.email}.</p>
+        </div>
+        <QuickAccess />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
