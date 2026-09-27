@@ -14,6 +14,7 @@ const saleSchema = z.object({
   items: z.array(saleItemSchema).min(1, "Adicione ao menos um produto"),
   paymentMethod: z.string().min(1, "Informe a forma de pagamento"),
   discount: z.number().min(0).default(0),
+  customerName: z.string().trim().max(120, "Nome do cliente muito longo (máx. 120 caracteres)").optional(),
 });
 
 export interface RegisterSaleResult {
@@ -39,6 +40,7 @@ export async function registerSale(
     })),
     p_payment_method: parsed.data.paymentMethod,
     p_discount: parsed.data.discount,
+    p_customer_name: parsed.data.customerName || null,
   });
 
   if (error) {

@@ -140,4 +140,28 @@ describe("register_sale (função Postgres)", () => {
       .single();
     expect(product!.stock_quantity).toBe(10);
   });
+
+  it("grava o nome do cliente sem espaços nas pontas, e vazio vira null", async () => {
+    const client = await signInAs(userEmail, password);
+    const { data: namedSaleId, error } = await client.rpc("register_sale", {
+      p_items: [{ product_id: productId, quantity: 1, unit_price: 50 }],
+      p_payment_method: "pix",
+      p_customer_name: "  Maria Souza  ",
+    });
+    expect(error).toBeNull();
+
+    const { data: blankSaleId } = await client.rpc("register_sale", {
+      p_items: [{ product_id: productId, quantity: 1, unit_price: 50 }],
+      p_payment_method: "pix",
+      p_customer_name: "   ",
+    });
+
+    const { data: sales } = await admin
+      .from("sales")
+      .select("id, customer_name")
+      .in("id", [namedSaleId, blankSaleId]);
+    const byId = Object.fromEntries(sales!.map((s) => [s.id, s.customer_name]));
+    expect(byId[namedSaleId]).toBe("Maria Souza");
+    expect(byId[blankSaleId]).toBeNull();
+  });
 });

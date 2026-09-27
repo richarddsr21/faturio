@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 
 const formSchema = z.object({
+  customerName: z.string().trim().max(120, "Máximo de 120 caracteres").optional(),
   paymentMethod: z.string().min(1, "Selecione a forma de pagamento"),
   discount: z.number().min(0).default(0),
   items: z
@@ -45,6 +46,7 @@ export function SaleForm({ products }: { products: SaleFormProduct[] }) {
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      customerName: "",
       discount: 0,
       paymentMethod: "pix",
       items: [{ productId: "", quantity: 1, unitPrice: 0 }],
@@ -67,6 +69,23 @@ export function SaleForm({ products }: { products: SaleFormProduct[] }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex max-w-2xl flex-col gap-6">
+      <div>
+        <label htmlFor="customerName" className="mb-1.5 block text-sm font-medium text-foreground">
+          Cliente <span className="font-normal text-muted-foreground">(opcional)</span>
+        </label>
+        <Input
+          id="customerName"
+          placeholder="Nome do cliente"
+          autoComplete="off"
+          maxLength={120}
+          invalid={!!errors.customerName}
+          {...register("customerName")}
+        />
+        {errors.customerName && (
+          <p className="mt-1 text-sm text-destructive">{errors.customerName.message}</p>
+        )}
+      </div>
+
       <div className="flex flex-col gap-4">
         {fields.map((field, index) => {
           const productField = register(`items.${index}.productId`);

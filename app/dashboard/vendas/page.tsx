@@ -2,6 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { SalesSearch } from "@/components/vendas/sales-search";
+
+const SALES_LIMIT = 50;
 
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -14,13 +17,29 @@ const paymentMethodLabels: Record<string, string> = {
   dinheiro: "Dinheiro",
 };
 
-export default async function VendasPage() {
+// Escapa os curingas do ILIKE para que "%" e "_" digitados sejam buscados literalmente.
+function escapeLikePattern(value: string) {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+export default async function VendasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cliente?: string | string[] }>;
+}) {
+  const { cliente } = await searchParams;
+  const customerQuery = (Array.isArray(cliente) ? cliente[0] : cliente ?? "").trim().slice(0, 120);
+
   const supabase = await createClient();
-  const { data: sales } = await supabase
+  let query = supabase
     .from("sales")
-    .select("id, sale_date, payment_method, gross_revenue, net_profit")
+    .select("id, sale_date, payment_method, gross_revenue, net_profit, customer_name")
     .order("sale_date", { ascending: false })
-    .limit(50);
+    .limit(SALES_LIMIT);
+  if (customerQuery) {
+    query = query.ilike("customer_name", `%${escapeLikePattern(customerQuery)}%`);
+  }
+  const { data: sales } = await query;
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,7 +53,21 @@ export default async function VendasPage() {
         </Button>
       </div>
 
-      {sales && sales.length > 0 ? (
+      <SalesSearch initialQuery={customerQuery} />
+
+      {customerQuery && sales && sales.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {sales.length === SALES_LIMIT
+            ? `Mostrando as ${SALES_LIMIT} vendas mais recentes de clientes com "${customerQuery}" no nome.`
+            : `${sales.length} ${sales.length === 1 ? "venda" : "vendas"} de clientes com "${customerQuery}" no nome.`}
+        </p>
+      )}
+
+      {customerQuery && sales?.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Nenhuma venda encontrada para o cliente &quot;{customerQuery}&quot;.
+        </p>
+      ) : sales && sales.length > 0 ? (
         <>
           <div className="flex flex-col gap-3 sm:hidden">
             {sales.map((sale) => (
@@ -50,6 +83,9 @@ export default async function VendasPage() {
                     {paymentMethodLabels[sale.payment_method] ?? sale.payment_method}
                   </p>
                 </div>
+                {sale.customer_name && (
+                  <p className="mt-1 truncate text-sm text-foreground">{sale.customer_name}</p>
+                )}
                 <div className="mt-3 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">Faturamento</p>
@@ -73,6 +109,7 @@ export default async function VendasPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
+                  <TableHead>Cliente</TableHead>
                   <TableHead>Pagamento</TableHead>
                   <TableHead>Faturamento</TableHead>
                   <TableHead>Lucro</TableHead>
@@ -82,6 +119,7 @@ export default async function VendasPage() {
                 {sales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell>{new Date(sale.sale_date).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="max-w-56 truncate">{sale.customer_name ?? "—"}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {paymentMethodLabels[sale.payment_method] ?? sale.payment_method}
                     </TableCell>
