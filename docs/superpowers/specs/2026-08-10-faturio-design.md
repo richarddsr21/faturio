@@ -337,10 +337,19 @@ Editor); não há tela nem Server Action que altere `role`.
 `profiles.name` (migration `20260927000000_admin_single_account.sql`) — sem isso, a policy
 `profiles_update_own` permitiria a qualquer cliente se promover via API.
 
+**2FA obrigatório.** A área admin exige TOTP (MFA nativo do Supabase Auth, app
+autenticador). No primeiro acesso, `/admin/verificacao` cadastra o app via QR code; nos
+seguintes, pede o código. Só uma sessão `aal2` opera o painel. Se o admin perder o app
+autenticador, o fator é removido no painel do Supabase (Authentication → Users → usuário →
+MFA factors) e o próximo acesso cadastra um novo.
+
 **Checagem de acesso** (`lib/admin/require-admin.ts`, `server-only`):
-- `getAdminUser()` lê a sessão no servidor e o `role` de `profiles` com o client da sessão.
-- Toda página de `/admin` chama `requireAdmin()` (não-admin recebe 404, sem revelar a
-  rota); o layout também chama, só para não exibir o menu de admin num 404. Layouts não
+- `getAdminIdentity()` lê a sessão no servidor, o `role` de `profiles` com o client da
+  sessão e o nível `aal` do access token (validado no Supabase Auth). Só decide redirecionamento.
+- `getAdminUser()` retorna a conta apenas com `aal2` — é a função de autorização.
+- Toda página do painel (`app/admin/(painel)/`) chama `requireAdmin()`: não-admin recebe 404,
+  sem revelar a rota; admin sem 2FA na sessão vai para `/admin/verificacao`. O layout do
+  painel também chama, só para não exibir o menu de admin num 404. Layouts não
   re-renderizam na navegação, então a checagem no layout nunca é a única.
 - Toda Server Action de `lib/actions/admin.ts` chama `getAdminUser()` antes de usar
   `service_role`. O input só identifica o alvo (cliente, checkout), nunca o admin.
