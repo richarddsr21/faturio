@@ -10,6 +10,8 @@ export interface ProcessPaymentResult {
   created: boolean;
   reason?: "already_processed" | "not_approved";
   userId?: string;
+  /** Só quando created = true: dados do checkout, usados na notificação de venda. */
+  customer?: { name: string; email: string };
 }
 
 export async function processPayment(
@@ -130,5 +132,5 @@ export async function processPayment(
     .update({ status: "completed", mercadopago_payment_id: payment.id })
     .eq("id", checkout.id);
 
-  return { created: true, userId };
+  return { created: true, userId, customer: { name: checkout.name, email: checkout.email } };
 }

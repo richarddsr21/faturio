@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import crypto from "node:crypto";
 import { processPayment } from "@/lib/mercadopago/process-payment";
+import { sendPaidSaleToUtmify } from "@/lib/utmify/send-sale";
 
 function verifySignature(request: NextRequest, dataId: string): boolean {
   const signatureHeader = request.headers.get("x-signature");
@@ -73,11 +74,24 @@ export async function POST(request: NextRequest) {
   const effectiveStatus = isValidAmountAndCurrency ? payment.status : "rejected";
 
   try {
-    await processPayment({
+    const result = await processPayment({
       id: String(payment.id),
       status: effectiveStatus,
       externalReference: payment.external_reference,
     });
+
+    // Notifica a UTMify só quando o acesso acabou de ser liberado — webhooks repetidos do
+    // mesmo pagamento voltam "already_processed" e não reenviam. Roda depois da resposta ao
+    // Mercado Pago: uma falha ou lentidão da UTMify não afeta a venda.
+    if (result.created && result.customer) {
+      const customer = result.customer;
+      after(async () => {
+        const sent = await sendPaidSaleToUtmify(payment, customer);
+        if (!sent.sent && sent.reason === "request_failed") {
+          console.error(`[utmify] Falha ao enviar venda: paymentId=${payment.id}, detalhe=${sent.detail}`);
+        }
+      });
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`[mercadopago-webhook] Erro ao processar pagamento: dataId=${dataId}, mensagem=${errorMessage}`);
