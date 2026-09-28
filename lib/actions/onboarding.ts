@@ -3,10 +3,14 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { settingsFieldsBaseSchema, feesBelow100Percent } from "@/lib/validations/settings";
+import {
+  revenueGoalSchema,
+  settingsFieldsBaseSchema,
+  feesBelow100Percent,
+} from "@/lib/validations/settings";
 
 const onboardingSchema = settingsFieldsBaseSchema
-  .extend({ revenueGoal: z.number().min(0, "Informe uma meta válida") })
+  .extend({ revenueGoal: revenueGoalSchema })
   .refine(feesBelow100Percent, {
     message: "A soma de taxa administrativa e taxa de cartão precisa ser menor que 100%",
     path: ["cardFee"],

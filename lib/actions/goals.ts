@@ -2,11 +2,12 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { revenueGoalSchema } from "@/lib/validations/settings";
 
 const goalSchema = z.object({
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020),
-  revenueGoal: z.number().min(0, "Informe uma meta válida"),
+  revenueGoal: revenueGoalSchema,
   desiredMargin: z.number().min(0).max(999.9999).optional(),
 });
 
