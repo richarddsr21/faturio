@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ComparisonChart } from "@/components/relatorios/comparison-chart";
 import { ReportPdfDocument } from "@/components/relatorios/report-pdf-document";
-import { buildReportXml } from "@/lib/relatorios/export-xml";
+import { buildReportSheets, reportFileName, toXlsxSheets } from "@/lib/relatorios/export-xlsx";
 import { downloadBlob } from "@/lib/relatorios/download-file";
 import { cn } from "@/lib/utils";
 import type { MonthlyMetric, TopProduct } from "@/lib/relatorios/monthly-report";
@@ -49,6 +49,7 @@ export default function ReportView({ periodLabel, monthsCount, months, topProduc
   const router = useRouter();
   const pathname = usePathname();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isGeneratingXlsx, setIsGeneratingXlsx] = useState(false);
   const hasData = months.some((m) => m.salesCount > 0);
 
   async function handleDownloadPdf() {
@@ -57,18 +58,23 @@ export default function ReportView({ periodLabel, monthsCount, months, topProduc
       const blob = await pdf(
         <ReportPdfDocument periodLabel={periodLabel} months={months} topProducts={topProducts} />
       ).toBlob();
-      downloadBlob(blob, `relatorio-${periodLabel.replace(/\s+/g, "-")}.pdf`);
+      downloadBlob(blob, reportFileName(periodLabel, "pdf"));
     } finally {
       setIsGeneratingPdf(false);
     }
   }
 
-  function handleDownloadXml() {
-    const xml = buildReportXml(periodLabel, months, topProducts);
-    downloadBlob(
-      new Blob([xml], { type: "application/xml" }),
-      `relatorio-${periodLabel.replace(/\s+/g, "-")}.xml`
-    );
+  async function handleDownloadXlsx() {
+    setIsGeneratingXlsx(true);
+    try {
+      // Carregada só no clique, para não pesar a página de relatórios.
+      const { default: writeXlsxFile } = await import("write-excel-file/browser");
+      const sheets = toXlsxSheets(buildReportSheets(months, topProducts));
+      const blob = await writeXlsxFile(sheets).toBlob();
+      downloadBlob(blob, reportFileName(periodLabel, "xlsx"));
+    } finally {
+      setIsGeneratingXlsx(false);
+    }
   }
 
   const totalRevenue = months.reduce((sum, m) => sum + m.revenue, 0);
@@ -139,8 +145,14 @@ export default function ReportView({ periodLabel, monthsCount, months, topProduc
             >
               {isGeneratingPdf ? "Gerando..." : "Baixar PDF"}
             </Button>
-            <Button type="button" variant="secondary" size="sm" disabled={!hasData} onClick={handleDownloadXml}>
-              Baixar XML
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!hasData || isGeneratingXlsx}
+              onClick={handleDownloadXlsx}
+            >
+              {isGeneratingXlsx ? "Gerando..." : "Baixar Excel (.xlsx)"}
             </Button>
           </div>
         </div>
