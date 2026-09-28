@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { completeOnboarding } from "@/lib/actions/onboarding";
 import {
+  revenueGoalSchema,
   settingsFormFieldsBaseSchema,
   feesBelow100PercentUI,
   settingsValuesToFraction,
@@ -16,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 
 const formSchema = settingsFormFieldsBaseSchema
-  .extend({ revenueGoal: z.number().min(0, "Informe uma meta válida") })
+  .extend({ revenueGoal: revenueGoalSchema })
   .refine(feesBelow100PercentUI, {
     message: "A soma de taxa administrativa e taxa de cartão precisa ser menor que 100%",
     path: ["cardFee"],

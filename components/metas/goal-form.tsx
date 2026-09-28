@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { upsertGoal } from "@/lib/actions/goals";
 import { optionalNumber, percentToFraction } from "@/lib/utils";
+import { revenueGoalSchema } from "@/lib/validations/settings";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -15,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 const formSchema = z.object({
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020),
-  revenueGoal: z.number().min(0, "Informe uma meta válida"),
+  revenueGoal: revenueGoalSchema,
   desiredMargin: z.number().min(0).max(99999.99, "Valor muito alto").optional(),
 });
 
