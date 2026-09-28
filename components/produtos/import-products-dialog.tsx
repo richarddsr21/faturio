@@ -58,10 +58,23 @@ const statusIcon = {
   error: <CircleAlert className="h-4 w-4 shrink-0 text-destructive" aria-label="Com erro" />,
 };
 
-export function ImportProductsDialog() {
+/**
+ * Passos da importação (modelo, envio, conferência). Usado pelo modal da página de Produtos
+ * e pelo modal de Produtos da Visão geral.
+ */
+export function ImportProductsPanel({
+  onClose,
+  onImported,
+  onBusyChange,
+}: {
+  onClose: () => void;
+  /** Chamado com a quantidade importada, no lugar da tela de sucesso. */
+  onImported?: (count: number) => void;
+  /** Avisa quem contém o painel para não deixar fechar no meio da importação. */
+  onBusyChange?: (busy: boolean) => void;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [rows, setRows] = useState<ImportRow[] | null>(null);
   const [reading, setReading] = useState(false);
@@ -75,12 +88,6 @@ export function ImportProductsDialog() {
     setError(null);
     setImported(null);
     if (inputRef.current) inputRef.current.value = "";
-  }
-
-  function handleOpenChange(next: boolean) {
-    if (importing) return;
-    setOpen(next);
-    if (!next) reset();
   }
 
   function downloadTemplate() {
@@ -127,17 +134,169 @@ export function ImportProductsDialog() {
   async function handleImport() {
     if (ready.length === 0) return;
     setImporting(true);
+    onBusyChange?.(true);
     setError(null);
     const result = await importProducts(ready.map((r) => r.values!));
     setImporting(false);
+    onBusyChange?.(false);
     if (!result.success) {
       setError(result.error ?? "Erro inesperado. Tente novamente.");
       return;
     }
+    router.refresh();
+    if (onImported) {
+      onImported(result.imported ?? 0);
+      return;
+    }
     setImported(result.imported ?? 0);
     setRows(null);
-    router.refresh();
   }
+
+  if (imported !== null) {
+    return (
+      <div className="mt-6 flex flex-col items-center gap-3 text-center">
+        <CircleCheck className="h-10 w-10 text-success" />
+        <p className="font-medium text-foreground">
+          {imported === 1 ? "1 produto importado." : `${imported} produtos importados.`}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Eles já aparecem na sua lista de produtos.
+        </p>
+        <DialogFooter className="self-stretch">
+          <Button type="button" variant="ghost" onClick={reset}>
+            Importar outra planilha
+          </Button>
+          <Button type="button" onClick={onClose}>
+            Concluir
+          </Button>
+        </DialogFooter>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 flex flex-col gap-5">
+      <ol className="flex flex-col gap-4 text-sm">
+        <li className="flex flex-col gap-2">
+          <p className="font-medium text-foreground">1. Baixe o modelo e preencha</p>
+          <p className="text-muted-foreground">
+            Só <strong>Nome</strong> e <strong>Custo</strong> são obrigatórios. Valores podem
+            ser escritos como 12,50 ou R$ 12,50; a margem em porcentagem (40 ou 40%).
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={downloadTemplate}
+            className="self-start"
+          >
+            <Download className="h-4 w-4" />
+            Baixar modelo
+          </Button>
+        </li>
+        <li className="flex flex-col gap-2">
+          <p className="font-medium text-foreground">2. Envie o arquivo preenchido</p>
+          <label
+            className={cn(
+              "flex cursor-pointer items-center gap-3 rounded-[10px] border border-dashed border-border px-4 py-4 transition-colors hover:bg-muted",
+              (reading || importing) && "pointer-events-none opacity-60"
+            )}
+          >
+            <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" />
+            <span className="min-w-0 flex-1 truncate text-foreground">
+              {reading ? "Lendo planilha..." : fileName ?? "Escolher arquivo .xlsx ou .csv"}
+            </span>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx,.csv"
+              onChange={handleFile}
+              className="sr-only"
+            />
+          </label>
+        </li>
+      </ol>
+
+      {error && <Alert variant="destructive">{error}</Alert>}
+
+      {rows && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-medium text-foreground">3. Confira antes de importar</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <span className="flex items-center gap-1.5 text-foreground">
+              {statusIcon.ok} {ready.length} prontos
+            </span>
+            {skipped > 0 && (
+              <span className="flex items-center gap-1.5 text-foreground">
+                {statusIcon.skip} {skipped} já cadastrados (serão pulados)
+              </span>
+            )}
+            {withErrors > 0 && (
+              <span className="flex items-center gap-1.5 text-foreground">
+                {statusIcon.error} {withErrors} com erro (serão ignorados)
+              </span>
+            )}
+          </div>
+          <ul className="flex max-h-72 flex-col divide-y divide-border overflow-y-auto rounded-[10px] border border-border">
+            {rows.map((row) => (
+              <li key={row.line} className="flex items-start gap-3 px-3 py-2">
+                <span className="mt-0.5">{statusIcon[row.status]}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-foreground">
+                    <span className="tabular-nums text-muted-foreground">Linha {row.line} · </span>
+                    {row.name || "(sem nome)"}
+                  </p>
+                  {row.messages.map((message) => (
+                    <p
+                      key={message}
+                      className={cn(
+                        "text-xs",
+                        row.status === "error" ? "text-destructive" : "text-muted-foreground"
+                      )}
+                    >
+                      {message}
+                    </p>
+                  ))}
+                </div>
+                {row.values && (
+                  <span className="shrink-0 tabular-nums text-sm text-muted-foreground">
+                    {formatCurrency(row.values.cost)}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <DialogFooter className="mt-0">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={importing}
+          onClick={onClose}
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="button"
+          disabled={!rows || ready.length === 0 || importing}
+          onClick={handleImport}
+        >
+          {importing
+            ? "Importando..."
+            : ready.length > 0
+              ? `Importar ${ready.length} ${ready.length === 1 ? "produto" : "produtos"}`
+              : "Importar"}
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+export function ImportProductsDialog() {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   return (
     <>
@@ -146,7 +305,7 @@ export function ImportProductsDialog() {
         Importar planilha
       </Button>
 
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Importar produtos por planilha</DialogTitle>
@@ -154,143 +313,7 @@ export function ImportProductsDialog() {
               Cadastre até {MAX_IMPORT_ROWS} produtos de uma vez a partir de um arquivo .xlsx ou .csv.
             </DialogDescription>
           </DialogHeader>
-
-          {imported !== null ? (
-            <div className="mt-6 flex flex-col items-center gap-3 text-center">
-              <CircleCheck className="h-10 w-10 text-success" />
-              <p className="font-medium text-foreground">
-                {imported === 1 ? "1 produto importado." : `${imported} produtos importados.`}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Eles já aparecem na sua lista de produtos.
-              </p>
-              <DialogFooter className="self-stretch">
-                <Button type="button" variant="ghost" onClick={reset}>
-                  Importar outra planilha
-                </Button>
-                <Button type="button" onClick={() => handleOpenChange(false)}>
-                  Concluir
-                </Button>
-              </DialogFooter>
-            </div>
-          ) : (
-            <div className="mt-6 flex flex-col gap-5">
-              <ol className="flex flex-col gap-4 text-sm">
-                <li className="flex flex-col gap-2">
-                  <p className="font-medium text-foreground">1. Baixe o modelo e preencha</p>
-                  <p className="text-muted-foreground">
-                    Só <strong>Nome</strong> e <strong>Custo</strong> são obrigatórios. Valores podem
-                    ser escritos como 12,50 ou R$ 12,50; a margem em porcentagem (40 ou 40%).
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={downloadTemplate}
-                    className="self-start"
-                  >
-                    <Download className="h-4 w-4" />
-                    Baixar modelo
-                  </Button>
-                </li>
-                <li className="flex flex-col gap-2">
-                  <p className="font-medium text-foreground">2. Envie o arquivo preenchido</p>
-                  <label
-                    className={cn(
-                      "flex cursor-pointer items-center gap-3 rounded-[10px] border border-dashed border-border px-4 py-4 transition-colors hover:bg-muted",
-                      (reading || importing) && "pointer-events-none opacity-60"
-                    )}
-                  >
-                    <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" />
-                    <span className="min-w-0 flex-1 truncate text-foreground">
-                      {reading ? "Lendo planilha..." : fileName ?? "Escolher arquivo .xlsx ou .csv"}
-                    </span>
-                    <input
-                      ref={inputRef}
-                      type="file"
-                      accept=".xlsx,.csv"
-                      onChange={handleFile}
-                      className="sr-only"
-                    />
-                  </label>
-                </li>
-              </ol>
-
-              {error && <Alert variant="destructive">{error}</Alert>}
-
-              {rows && (
-                <div className="flex flex-col gap-3">
-                  <p className="text-sm font-medium text-foreground">3. Confira antes de importar</p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                    <span className="flex items-center gap-1.5 text-foreground">
-                      {statusIcon.ok} {ready.length} prontos
-                    </span>
-                    {skipped > 0 && (
-                      <span className="flex items-center gap-1.5 text-foreground">
-                        {statusIcon.skip} {skipped} já cadastrados (serão pulados)
-                      </span>
-                    )}
-                    {withErrors > 0 && (
-                      <span className="flex items-center gap-1.5 text-foreground">
-                        {statusIcon.error} {withErrors} com erro (serão ignorados)
-                      </span>
-                    )}
-                  </div>
-                  <ul className="flex max-h-72 flex-col divide-y divide-border overflow-y-auto rounded-[10px] border border-border">
-                    {rows.map((row) => (
-                      <li key={row.line} className="flex items-start gap-3 px-3 py-2">
-                        <span className="mt-0.5">{statusIcon[row.status]}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm text-foreground">
-                            <span className="tabular-nums text-muted-foreground">Linha {row.line} · </span>
-                            {row.name || "(sem nome)"}
-                          </p>
-                          {row.messages.map((message) => (
-                            <p
-                              key={message}
-                              className={cn(
-                                "text-xs",
-                                row.status === "error" ? "text-destructive" : "text-muted-foreground"
-                              )}
-                            >
-                              {message}
-                            </p>
-                          ))}
-                        </div>
-                        {row.values && (
-                          <span className="shrink-0 tabular-nums text-sm text-muted-foreground">
-                            {formatCurrency(row.values.cost)}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <DialogFooter className="mt-0">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={importing}
-                  onClick={() => handleOpenChange(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  disabled={!rows || ready.length === 0 || importing}
-                  onClick={handleImport}
-                >
-                  {importing
-                    ? "Importando..."
-                    : ready.length > 0
-                      ? `Importar ${ready.length} ${ready.length === 1 ? "produto" : "produtos"}`
-                      : "Importar"}
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
+          <ImportProductsPanel onClose={() => setOpen(false)} onBusyChange={setBusy} />
         </DialogContent>
       </Dialog>
     </>

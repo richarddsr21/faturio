@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CircleAlert, CircleCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleAlert, CircleCheck, Upload } from "lucide-react";
 import {
   getQuickView,
   type QuickViewData,
@@ -11,6 +11,8 @@ import {
 } from "@/lib/actions/quick-view";
 import { dashboardSections } from "@/components/dashboard/nav-items";
 import { ProductForm } from "@/components/produtos/product-form";
+import { ImportProductsPanel } from "@/components/produtos/import-products-dialog";
+import { MAX_IMPORT_ROWS } from "@/lib/produtos/import-products";
 import { StockMovementForm } from "@/components/estoque/stock-movement-form";
 import { SaleForm } from "@/components/vendas/sale-form";
 import { GoalForm } from "@/components/metas/goal-form";
@@ -317,8 +319,9 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
   const router = useRouter();
   const [data, setData] = useState<QuickViewData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"summary" | "form">("summary");
+  const [view, setView] = useState<"summary" | "form" | "import">("summary");
   const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const item = quickAccessSections.find((s) => s.section === section)!;
   const copy = sectionCopy[section];
   const Icon = item.icon;
@@ -345,17 +348,29 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
     };
   }, [section]);
 
-  async function handleDone() {
+  async function handleDone(message: string = copy.done) {
     setView("summary");
-    setNotice(copy.done);
+    setNotice(message);
     router.refresh(); // atualiza os cards da Visão geral atrás do modal
     await load();
   }
 
+  function openView(next: "form" | "import") {
+    setNotice(null);
+    setView(next);
+  }
+
   const inForm = view === "form";
+  const inImport = view === "import";
+  const title = inImport ? "Importar planilha" : inForm ? copy.formTitle : item.label;
+  const description = inImport
+    ? `Cadastre até ${MAX_IMPORT_ROWS} produtos de uma vez a partir de um arquivo .xlsx ou .csv.`
+    : inForm
+      ? copy.formDescription
+      : copy.description;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -363,13 +378,21 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
               <Icon className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
-              <DialogTitle>{inForm ? copy.formTitle : item.label}</DialogTitle>
-              <DialogDescription>{inForm ? copy.formDescription : copy.description}</DialogDescription>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription>{description}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        {inForm && data ? (
+        {inImport ? (
+          <ImportProductsPanel
+            onClose={() => setView("summary")}
+            onBusyChange={setBusy}
+            onImported={(count) =>
+              handleDone(count === 1 ? "1 produto importado." : `${count} produtos importados.`)
+            }
+          />
+        ) : inForm && data ? (
           <div className="mt-5 flex flex-col gap-4">
             <Button
               type="button"
@@ -381,7 +404,7 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
               <ArrowLeft className="h-4 w-4" />
               Voltar ao resumo
             </Button>
-            <SectionForm data={data} onDone={handleDone} />
+            <SectionForm data={data} onDone={() => handleDone()} />
           </div>
         ) : (
           <>
@@ -411,14 +434,13 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button
-                type="button"
-                disabled={!data}
-                onClick={() => {
-                  setNotice(null);
-                  setView("form");
-                }}
-              >
+              {section === "produtos" && (
+                <Button type="button" variant="secondary" onClick={() => openView("import")}>
+                  <Upload className="h-4 w-4" />
+                  Importar planilha
+                </Button>
+              )}
+              <Button type="button" disabled={!data} onClick={() => openView("form")}>
                 {copy.createLabel}
               </Button>
             </DialogFooter>
