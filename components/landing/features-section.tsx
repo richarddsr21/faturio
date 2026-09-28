@@ -1,4 +1,14 @@
-import { Calculator, Package, Boxes, ShoppingCart, Target, TrendingUp } from "lucide-react";
+import {
+  Calculator,
+  Package,
+  Boxes,
+  ShoppingCart,
+  Target,
+  TrendingUp,
+  BarChart3,
+  FileSpreadsheet,
+  Users,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const features = [
@@ -8,6 +18,13 @@ const features = [
   { icon: ShoppingCart, title: "Vendas", description: "Registre e acompanhe suas vendas." },
   { icon: Target, title: "Metas", description: "Saiba exatamente quanto falta." },
   { icon: TrendingUp, title: "Lucro", description: "Entenda quanto realmente ganhou." },
+  { icon: BarChart3, title: "Relatórios", description: "Compare meses e exporte em PDF ou Excel." },
+  {
+    icon: FileSpreadsheet,
+    title: "Importação por planilha",
+    description: "Traga seus produtos do Excel sem redigitar nada.",
+  },
+  { icon: Users, title: "Clientes", description: "Saiba quem comprou e encontre qualquer venda." },
 ];
 
 export function FeaturesSection() {

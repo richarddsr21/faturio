@@ -14,8 +14,8 @@ export function SalesShowcase() {
           <p className="text-sm font-medium text-foreground">Tênis Premium</p>
           <p className="text-xs text-muted-foreground">2 unidades · 10/08/2026</p>
           <div className="mt-3 flex items-center gap-4 text-sm">
-            <span className="tabular-nums text-foreground">R$ 174,28</span>
-            <span className="tabular-nums text-success">+R$ 74,28 lucro</span>
+            <span className="tabular-nums text-foreground">R$ 158,60</span>
+            <span className="tabular-nums text-success">+R$ 36,60 lucro</span>
           </div>
         </div>
         <ArrowRight className="h-5 w-5 shrink-0 text-primary" />

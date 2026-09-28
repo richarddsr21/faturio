@@ -2,6 +2,8 @@ import { PricingShowcase } from "./pricing-showcase";
 import { StockShowcase } from "./stock-showcase";
 import { SalesShowcase } from "./sales-showcase";
 import { GoalShowcase } from "./goal-showcase";
+import { ReportsShowcase } from "./reports-showcase";
+import { ImportShowcase } from "./import-showcase";
 
 export function HowItWorksSection() {
   return (
@@ -14,6 +16,8 @@ export function HowItWorksSection() {
         <StockShowcase />
         <SalesShowcase />
         <GoalShowcase />
+        <ReportsShowcase />
+        <ImportShowcase />
       </div>
     </section>
   );

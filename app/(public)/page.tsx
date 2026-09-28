@@ -4,7 +4,9 @@ import { ControlSection } from "@/components/landing/control-section";
 import { FeaturesSection } from "@/components/landing/features-section";
 import { HowItWorksSection } from "@/components/landing/how-it-works-section";
 import { PricingCTA } from "@/components/landing/pricing-cta";
+import { AudienceSection } from "@/components/landing/audience-section";
 import { FAQSection } from "@/components/landing/faq-section";
+import { FinalCTA } from "@/components/landing/final-cta";
 import { Footer } from "@/components/landing/footer";
 
 const softwareApplicationJsonLd = {
@@ -36,10 +38,12 @@ export default function Home() {
       <main>
         <Hero />
         <ControlSection />
+        <AudienceSection />
         <FeaturesSection />
         <HowItWorksSection />
         <PricingCTA />
         <FAQSection />
+        <FinalCTA />
       </main>
       <Footer />
     </>

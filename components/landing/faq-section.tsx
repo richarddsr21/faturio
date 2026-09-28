@@ -11,9 +11,19 @@ const faqs = [
     answer: "Sim. Você paga uma vez R$ 129,90 e tem acesso vitalício ao Faturio.",
   },
   {
+    question: "E se eu não gostar?",
+    answer:
+      "Você tem 7 dias de garantia a partir da compra. Se não gostar, é só mandar um e-mail para o suporte pedindo o reembolso e devolvemos 100% do valor, sem perguntas.",
+  },
+  {
+    question: "Já tenho meus produtos numa planilha. Preciso cadastrar tudo de novo?",
+    answer:
+      "Não. Você pode importar seus produtos direto de uma planilha Excel ou CSV, com custo, preço, estoque e margem.",
+  },
+  {
     question: "Preciso entender de finanças pra usar o Faturio?",
     answer:
-      "Não. O Faturio foi pensado para quem nunca trabalhou com planilhas ou controle financeiro — os cálculos são feitos por você.",
+      "Não. O Faturio foi pensado para quem nunca trabalhou com planilhas ou controle financeiro — os cálculos são feitos para você.",
   },
   {
     question: "Meus dados ficam isolados dos de outros clientes?",

@@ -27,7 +27,7 @@ export function PricingShowcase() {
         </dl>
         <div className="mt-4 flex items-center justify-between">
           <span className="text-sm font-medium text-muted-foreground">Preço recomendado</span>
-          <span className="text-2xl font-bold tabular-nums text-primary">R$ 87,14</span>
+          <span className="text-2xl font-bold tabular-nums text-primary">R$ 79,30</span>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HeroVisual } from "./hero-visual";
@@ -22,6 +23,10 @@ export function Hero() {
           </Button>
           <Badge>R$ 129,90 — Pagamento único</Badge>
         </div>
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <ShieldCheck className="h-4 w-4 text-success" /> Garantia de 7 dias ou seu dinheiro de
+          volta
+        </p>
       </div>
       <HeroVisual />
     </section>

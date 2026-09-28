@@ -66,7 +66,21 @@ export default function TermosDeUsoPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-foreground">6. Cancelamento e exclusão de conta</h2>
+          <h2 className="mb-2 text-lg font-semibold text-foreground">6. Garantia e reembolso</h2>
+          <p>
+            Você tem 7 (sete) dias corridos a partir da confirmação do pagamento para desistir da
+            compra, conforme o art. 49 do Código de Defesa do Consumidor. Para isso, basta enviar
+            um e-mail para{" "}
+            <a href="mailto:richarddsr21@gmail.com" className="underline">
+              richarddsr21@gmail.com
+            </a>{" "}
+            com o e-mail usado na compra. O valor pago é devolvido integralmente, pelo mesmo meio
+            de pagamento, e o acesso à plataforma é encerrado.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-lg font-semibold text-foreground">7. Cancelamento e exclusão de conta</h2>
           <p>
             Para solicitar o cancelamento e a exclusão da sua conta e dos seus dados, entre em
             contato com nosso suporte pelo e-mail{" "}
@@ -78,7 +92,7 @@ export default function TermosDeUsoPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-foreground">7. Alterações destes termos</h2>
+          <h2 className="mb-2 text-lg font-semibold text-foreground">8. Alterações destes termos</h2>
           <p>
             Podemos atualizar estes Termos de Uso periodicamente. Alterações relevantes serão
             comunicadas por e-mail ou dentro da plataforma.
