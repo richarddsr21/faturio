@@ -26,23 +26,22 @@ export function ComparisonChart({ data }: { data: ComparisonChartPoint[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={12} />
-          <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} />
+          <YAxis stroke="var(--muted-foreground)" fontSize={12} />
           <Tooltip
             formatter={(value) => formatCurrency(Number(value))}
-            // Cor literal, não var(--color-*): o tooltip do Recharts não herda os
-            // tokens CSS corretamente (mesmo problema já visto em revenue-chart.tsx).
+            // Tokens do tema (não cores fixas) para o tooltip acompanhar o tema escuro do painel.
             contentStyle={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E9E9F2",
-              borderRadius: "10px",
+              backgroundColor: "var(--card)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--control-radius)",
             }}
-            labelStyle={{ color: "#1E1B4B", fontWeight: 600 }}
+            labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
           />
           <Legend />
-          <Bar dataKey="revenue" name="Faturamento" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="profit" name="Lucro" fill="var(--color-success)" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="revenue" name="Faturamento" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="profit" name="Lucro" fill="var(--lilac)" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
