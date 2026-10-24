@@ -2,10 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterChips } from "@/components/ui/filter-chips";
+import { MarginBar } from "@/components/ui/margin-bar";
+import { StockBadge } from "@/components/ui/stock-badge";
 import { isLowStock } from "@/lib/finance/stock";
+import { catalogCategories, productInitials, productMargin } from "@/lib/produtos/catalog";
 
 export interface ProductListItem {
   id: string;
@@ -17,126 +20,176 @@ export interface ProductListItem {
   minimum_stock: number;
 }
 
+const ALL = "__todos__";
+
 function formatCurrency(value: number | null) {
   if (value === null) return "—";
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function ProductAvatar({ name }: { name: string }) {
+  return (
+    <span
+      aria-hidden
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-muted font-display text-sm font-bold text-primary"
+    >
+      {productInitials(name)}
+    </span>
+  );
+}
+
+function CategoryTag({ category }: { category: string | null }) {
+  if (!category) return null;
+  return (
+    <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+      {category}
+    </span>
+  );
+}
+
+function EditButton({ id, name }: { id: string; name: string }) {
+  return (
+    <Button asChild variant="outline" size="sm" className="h-9">
+      <Link href={`/dashboard/produtos/${id}/editar`} aria-label={`Editar ${name}`}>
+        Editar
+      </Link>
+    </Button>
+  );
+}
+
+const desktopColumns = "grid-cols-[minmax(0,2.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.6fr)_minmax(0,0.9fr)_5.5rem]";
+
 export function ProductList({ products }: { products: ProductListItem[] }) {
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState(ALL);
+
+  const categories = useMemo(() => catalogCategories(products), [products]);
 
   const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return products;
-    return products.filter((product) => product.name.toLowerCase().includes(query));
-  }, [products, search]);
+    const query = search.trim().toLocaleLowerCase("pt-BR");
+    const categoryKey = category.toLocaleLowerCase("pt-BR");
+    return products.filter(
+      (product) =>
+        (!query || product.name.toLocaleLowerCase("pt-BR").includes(query)) &&
+        (category === ALL || product.category?.trim().toLocaleLowerCase("pt-BR") === categoryKey)
+    );
+  }, [products, search, category]);
 
   return (
-    <>
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <SearchInput
+          className="md:w-80"
           placeholder="Buscar produto pelo nome..."
+          aria-label="Buscar produto pelo nome"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="pl-9"
         />
+        {categories.length > 0 && (
+          <FilterChips
+            label="Filtrar por categoria"
+            value={category}
+            onChange={setCategory}
+            options={[{ value: ALL, label: "Todos" }, ...categories.map((c) => ({ value: c, label: c }))]}
+          />
+        )}
       </div>
 
-      {filteredProducts.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nenhum produto encontrado para &quot;{search}&quot;.</p>
-      )}
+      {filteredProducts.length === 0 ? (
+        <p className="rounded-card border border-dashed border-border px-5 py-8 text-center text-sm text-muted-foreground">
+          Nenhum produto encontrado
+          {search.trim() ? ` para "${search.trim()}"` : ""}
+          {category !== ALL ? ` em ${category}` : ""}.
+        </p>
+      ) : (
+        <>
+          {/* Celular: um card por produto. */}
+          <ul className="flex flex-col gap-3 md:hidden">
+            {filteredProducts.map((product) => {
+              const price = product.current_price !== null ? Number(product.current_price) : null;
+              return (
+                <li key={product.id} className="rounded-card border border-border bg-card p-4">
+                  <div className="flex items-start gap-3">
+                    <ProductAvatar name={product.name} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{product.name}</p>
+                      <CategoryTag category={product.category} />
+                    </div>
+                    <EditButton id={product.id} name={product.name} />
+                  </div>
+                  <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Custo</dt>
+                      <dd className="font-mono text-muted-foreground">{formatCurrency(Number(product.cost))}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Preço</dt>
+                      <dd className="font-mono font-semibold">{formatCurrency(price)}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Estoque</dt>
+                      <dd>
+                        <StockBadge
+                          quantity={product.stock_quantity}
+                          low={isLowStock(product.stock_quantity, product.minimum_stock)}
+                        />
+                      </dd>
+                    </div>
+                  </dl>
+                  <MarginBar className="mt-3" margin={productMargin(Number(product.cost), price)} />
+                </li>
+              );
+            })}
+          </ul>
 
-      <div className="flex flex-col gap-3 sm:hidden">
-        {filteredProducts.map((product) => (
-          <div
-            key={product.id}
-            className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-medium text-foreground">{product.name}</p>
-                <p className="text-sm text-muted-foreground">{product.category ?? "—"}</p>
-              </div>
-              <Link
-                href={`/dashboard/produtos/${product.id}/editar`}
-                className="shrink-0 text-sm font-medium text-primary hover:underline"
-              >
-                Editar
-              </Link>
+          {/* Desktop: linhas em grade. */}
+          <div className="hidden flex-col gap-2 md:flex">
+            <div
+              className={`grid ${desktopColumns} items-center gap-4 px-4 font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground`}
+            >
+              <span>Produto</span>
+              <span>Custo</span>
+              <span>Preço</span>
+              <span>Margem</span>
+              <span>Estoque</span>
+              <span className="sr-only">Ações</span>
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Custo</p>
-                <p className="tabular-nums text-sm text-foreground">{formatCurrency(Number(product.cost))}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Preço</p>
-                <p className="tabular-nums text-sm text-foreground">
-                  {formatCurrency(product.current_price !== null ? Number(product.current_price) : null)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Estoque</p>
-                <p
-                  className={
-                    isLowStock(product.stock_quantity, product.minimum_stock)
-                      ? "text-sm font-medium text-warning"
-                      : "tabular-nums text-sm text-foreground"
-                  }
-                >
-                  {product.stock_quantity} un.
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="hidden sm:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Custo</TableHead>
-              <TableHead>Preço</TableHead>
-              <TableHead>Estoque</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProducts.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell className="text-muted-foreground">{product.category ?? "—"}</TableCell>
-                <TableCell className="tabular-nums">{formatCurrency(Number(product.cost))}</TableCell>
-                <TableCell className="tabular-nums">
-                  {formatCurrency(product.current_price !== null ? Number(product.current_price) : null)}
-                </TableCell>
-                <TableCell
-                  className={
-                    isLowStock(product.stock_quantity, product.minimum_stock)
-                      ? "font-medium text-warning"
-                      : "tabular-nums"
-                  }
-                >
-                  {product.stock_quantity} un.
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/dashboard/produtos/${product.id}/editar`}
-                    className="text-sm font-medium text-primary hover:underline"
+            <ul className="flex flex-col gap-2">
+              {filteredProducts.map((product) => {
+                const price = product.current_price !== null ? Number(product.current_price) : null;
+                return (
+                  <li
+                    key={product.id}
+                    className={`grid ${desktopColumns} items-center gap-4 rounded-control border border-border bg-card px-4 py-3 transition-colors hover:border-muted-foreground/30`}
                   >
-                    Editar
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <ProductAvatar name={product.name} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold" title={product.name}>
+                          {product.name}
+                        </p>
+                        <CategoryTag category={product.category} />
+                      </div>
+                    </div>
+                    <span className="font-mono text-sm text-muted-foreground">
+                      {formatCurrency(Number(product.cost))}
+                    </span>
+                    <span className="font-mono text-sm font-semibold">{formatCurrency(price)}</span>
+                    <MarginBar margin={productMargin(Number(product.cost), price)} />
+                    <span>
+                      <StockBadge
+                        quantity={product.stock_quantity}
+                        low={isLowStock(product.stock_quantity, product.minimum_stock)}
+                      />
+                    </span>
+                    <EditButton id={product.id} name={product.name} />
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
