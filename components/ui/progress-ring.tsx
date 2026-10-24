@@ -9,6 +9,8 @@ interface ProgressRingProps {
   /** Cor do arco via text-* (ex.: "text-primary", "text-warning"). */
   className?: string;
   trackClassName?: string;
+  /** Classes do contêiner (ex.: posição no grid). */
+  wrapperClassName?: string;
   /** Conteúdo no centro do anel (ex.: o percentual). */
   children?: React.ReactNode;
   label?: string;
@@ -20,6 +22,7 @@ export function ProgressRing({
   strokeWidth = 8,
   className,
   trackClassName,
+  wrapperClassName,
   children,
   label,
 }: ProgressRingProps) {
@@ -29,7 +32,7 @@ export function ProgressRing({
 
   return (
     <div
-      className="relative inline-flex shrink-0 items-center justify-center"
+      className={cn("relative inline-flex shrink-0 items-center justify-center", wrapperClassName)}
       style={{ width: size, height: size }}
       role="img"
       aria-label={label}
