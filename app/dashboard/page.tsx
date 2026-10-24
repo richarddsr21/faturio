@@ -1,205 +1,143 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { QuickAccess } from "@/components/dashboard/quick-access";
-import { calculateGoalProgress } from "@/lib/finance/goals";
+import { Overview } from "@/components/dashboard/overview";
 import { calculateStockPotential } from "@/lib/finance/stock-potential";
-import { calculateAverageTicket, calculateMonthProjection } from "@/lib/finance/projection";
+import { calculateMonthProjection } from "@/lib/finance/projection";
+import {
+  comparisonRange,
+  cumulativeRevenue,
+  daysInMonth,
+  goalStatus,
+  isSameMonth,
+  monthNames,
+  monthRange,
+  mostCriticalStock,
+  overviewHeadline,
+  parseMonthParam,
+  shiftMonth,
+  summarizeSales,
+  topProduct,
+  type OverviewSale,
+} from "@/lib/dashboard/overview";
 
-function formatCurrency(value: number) {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+interface SaleRow {
+  sale_date: string;
+  gross_revenue: number | string;
+  net_profit: number | string;
+  sale_items: {
+    product_id: string;
+    quantity: number;
+    subtotal: number | string;
+    products: { name: string } | null;
+  }[];
 }
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const SALE_COLUMNS =
+  "sale_date, gross_revenue, net_profit, sale_items(product_id, quantity, subtotal, products(name))";
 
+function toOverviewSale(row: SaleRow): OverviewSale {
+  return {
+    saleDate: row.sale_date,
+    grossRevenue: Number(row.gross_revenue),
+    netProfit: Number(row.net_profit),
+    items: row.sale_items.map((item) => ({
+      productId: item.product_id,
+      productName: item.products?.name ?? "Produto removido",
+      quantity: item.quantity,
+      subtotal: Number(item.subtotal),
+    })),
+  };
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mes?: string | string[] }>;
+}) {
+  const { mes } = await searchParams;
   const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
-  const startOfMonth = new Date(year, now.getMonth(), 1).toISOString();
-  const startOfNextMonth = new Date(year, now.getMonth() + 1, 1).toISOString();
+  const current = { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const selected = parseMonthParam(Array.isArray(mes) ? mes[0] : mes, now);
+  const isCurrentMonth = isSameMonth(selected, current);
+  const range = monthRange(selected);
+  const comparison = comparisonRange(selected, now);
 
-  const [{ data: goal }, { data: sales }, { data: products }] = await Promise.all([
-    supabase.from("goals").select("revenue_goal").eq("month", month).eq("year", year).maybeSingle(),
+  // Client da sessão: RLS restringe cada tabela às linhas do próprio usuário.
+  const supabase = await createClient();
+  const [goalResult, salesResult, previousResult, recentResult, productsResult] = await Promise.all([
+    supabase
+      .from("goals")
+      .select("revenue_goal")
+      .eq("month", selected.month)
+      .eq("year", selected.year)
+      .maybeSingle(),
     supabase
       .from("sales")
-      .select("id, sale_date, gross_revenue, net_profit, sale_items(quantity)")
-      .gte("sale_date", startOfMonth)
-      .lt("sale_date", startOfNextMonth)
+      .select(SALE_COLUMNS)
+      .gte("sale_date", range.start.toISOString())
+      .lt("sale_date", range.end.toISOString())
       .order("sale_date", { ascending: true }),
     supabase
+      .from("sales")
+      .select(SALE_COLUMNS)
+      .gte("sale_date", comparison.start.toISOString())
+      .lt("sale_date", comparison.end.toISOString()),
+    supabase
+      .from("sales")
+      .select("id, sale_date, payment_method, gross_revenue, net_profit, customer_name")
+      .lt("sale_date", range.end.toISOString())
+      .order("sale_date", { ascending: false })
+      .limit(3),
+    supabase
       .from("products")
-      .select("stock_quantity, minimum_stock, current_price")
+      .select("id, name, stock_quantity, minimum_stock, current_price")
       .eq("status", "active"),
   ]);
 
-  const salesList = sales ?? [];
-  const productsList = products ?? [];
+  const sales = ((salesResult.data ?? []) as unknown as SaleRow[]).map(toOverviewSale);
+  const previousSales = ((previousResult.data ?? []) as unknown as SaleRow[]).map(toOverviewSale);
+  const products = productsResult.data ?? [];
 
-  const totalRevenue = salesList.reduce((sum, sale) => sum + Number(sale.gross_revenue), 0);
-  const totalProfit = salesList.reduce((sum, sale) => sum + Number(sale.net_profit), 0);
-  const totalPiecesSold = salesList.reduce(
-    (sum, sale) =>
-      sum + sale.sale_items.reduce((itemSum: number, item: { quantity: number }) => itemSum + item.quantity, 0),
-    0
-  );
-  const margin = totalRevenue > 0 ? totalProfit / totalRevenue : 0;
-  const averageTicket = calculateAverageTicket(totalRevenue, salesList.length);
-
-  const goalProgress = calculateGoalProgress({
-    goal: goal?.revenue_goal ?? 0,
-    currentRevenue: totalRevenue,
-    averageTicket,
-  });
-
-  const stockPotential = calculateStockPotential(
-    productsList.map((p) => ({
-      stockQuantity: p.stock_quantity,
-      currentPrice: Number(p.current_price ?? 0),
-    }))
-  );
-  const totalStockUnits = productsList.reduce((sum, p) => sum + p.stock_quantity, 0);
-  const lowStockCount = productsList.filter((p) => p.stock_quantity < p.minimum_stock).length;
-
-  const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate();
-  const monthProjection = calculateMonthProjection(totalRevenue, now.getDate(), daysInMonth);
-
-  const revenueByDay = new Map<string, number>();
-  for (const sale of salesList) {
-    const day = String(sale.sale_date).slice(0, 10);
-    revenueByDay.set(day, (revenueByDay.get(day) ?? 0) + Number(sale.gross_revenue));
-  }
-  const chartData = Array.from(revenueByDay.entries()).map(([date, revenue]) => ({ date, revenue }));
+  const totals = summarizeSales(sales);
+  const goal = goalStatus(goalResult.data ? Number(goalResult.data.revenue_goal) : null, totals.revenue);
+  const projection = isCurrentMonth
+    ? calculateMonthProjection(totals.revenue, now.getDate(), daysInMonth(selected))
+    : totals.revenue;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-foreground">Visão geral</h1>
-          <p className="truncate text-muted-foreground">Bem-vindo, {user?.email}.</p>
-        </div>
-        <QuickAccess />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Meta mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">
-              {formatCurrency(goal?.revenue_goal ?? 0)}
-            </p>
-            <div className="mt-3">
-              <Progress value={goalProgress.progressPercentage * 100} />
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {(goalProgress.progressPercentage * 100).toFixed(1)}% — falta{" "}
-                {formatCurrency(goalProgress.remaining)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Faturamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">{formatCurrency(totalRevenue)}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Lucro líquido</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">{formatCurrency(totalProfit)}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Margem</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">{(margin * 100).toFixed(1)}%</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Peças vendidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">{totalPiecesSold}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ticket médio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">{formatCurrency(averageTicket)}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Estoque</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">{totalStockUnits} un.</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {formatCurrency(stockPotential)} em potencial
-              {lowStockCount > 0 && ` · ${lowStockCount} produto(s) com estoque baixo`}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Falta para a meta</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">
-              {formatCurrency(goalProgress.remaining)}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              ~{goalProgress.estimatedSalesNeeded} vendas para bater a meta
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Projeção mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums text-foreground">
-              {formatCurrency(monthProjection)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Faturamento no mês</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {chartData.length > 0 ? (
-            <RevenueChart data={chartData} />
-          ) : (
-            <p className="text-sm text-muted-foreground">Nenhuma venda registrada neste mês ainda.</p>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Overview
+      headline={overviewHeadline({ goal, salesCount: totals.salesCount, isCurrentMonth, projection })}
+      selected={selected}
+      current={current}
+      monthName={monthNames[selected.month - 1]}
+      previousName={monthNames[shiftMonth(selected, -1).month - 1]}
+      comparisonCutDay={comparison.partial ? now.getDate() : null}
+      totals={totals}
+      previousTotals={summarizeSales(previousSales)}
+      goal={goal}
+      champion={topProduct(sales)}
+      distinctProducts={new Set(sales.flatMap((s) => s.items.map((i) => i.productId))).size}
+      series={cumulativeRevenue(sales, selected, now)}
+      recentSales={(recentResult.data ?? []).map((s) => ({
+        id: s.id,
+        saleDate: s.sale_date,
+        paymentMethod: s.payment_method,
+        grossRevenue: Number(s.gross_revenue),
+        netProfit: Number(s.net_profit),
+        customerName: s.customer_name,
+      }))}
+      stockUnits={products.reduce((sum, p) => sum + p.stock_quantity, 0)}
+      stockPotential={calculateStockPotential(
+        products.map((p) => ({ stockQuantity: p.stock_quantity, currentPrice: Number(p.current_price ?? 0) }))
+      )}
+      critical={mostCriticalStock(
+        products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          stockQuantity: p.stock_quantity,
+          minimumStock: p.minimum_stock,
+        }))
+      )}
+      hasProducts={products.length > 0}
+    />
   );
 }

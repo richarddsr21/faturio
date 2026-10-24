@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { calculateGoalProgress } from "@/lib/finance/goals";
 import { calculateAverageTicket } from "@/lib/finance/projection";
+import { isLowStock } from "@/lib/finance/stock";
 
 const RECENT_LIMIT = 5;
 const LOW_STOCK_LIMIT = 8;
@@ -150,9 +151,9 @@ export async function getQuickView(section: QuickViewSection): Promise<QuickView
         .eq("status", "active")
         .order("name");
       if (error) return failed;
-      // Mesma regra do card "Estoque" da Visão geral: abaixo do mínimo.
+      // Mesma regra de todo o painel: no mínimo ou abaixo dele (isLowStock).
       const low = products
-        .filter((p) => p.stock_quantity < p.minimum_stock)
+        .filter((p) => isLowStock(p.stock_quantity, p.minimum_stock))
         .sort((a, b) => a.stock_quantity - b.stock_quantity);
       return {
         success: true,

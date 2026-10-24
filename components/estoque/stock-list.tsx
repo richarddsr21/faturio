@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StockMovementForm } from "@/components/estoque/stock-movement-form";
 import { cn } from "@/lib/utils";
+import { isLowStock } from "@/lib/finance/stock";
 
 export interface StockListProduct {
   id: string;
@@ -48,7 +49,7 @@ export function StockList({ products }: { products: StockListProduct[] }) {
 
       <div className="flex flex-col gap-3 sm:hidden">
         {filteredProducts.map((product) => {
-          const isLow = product.stock_quantity < product.minimum_stock;
+          const isLow = isLowStock(product.stock_quantity, product.minimum_stock);
           const isOpen = openProductId === product.id;
           return (
             <div
@@ -97,7 +98,7 @@ export function StockList({ products }: { products: StockListProduct[] }) {
           </TableHeader>
           <TableBody>
             {filteredProducts.map((product) => {
-              const isLow = product.stock_quantity < product.minimum_stock;
+              const isLow = isLowStock(product.stock_quantity, product.minimum_stock);
               return (
                 <Fragment key={product.id}>
                   <TableRow>
