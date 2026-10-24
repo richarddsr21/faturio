@@ -11,5 +11,5 @@ if (typeof global.WebSocket === "undefined") {
     addEventListener() {}
     removeEventListener() {}
   }
-  (global as any).WebSocket = MockWebSocket;
+  (globalThis as unknown as { WebSocket: unknown }).WebSocket = MockWebSocket;
 }
