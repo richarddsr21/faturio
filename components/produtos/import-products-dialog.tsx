@@ -300,7 +300,7 @@ export function ImportProductsDialog() {
 
   return (
     <>
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
         <Upload className="h-4 w-4" />
         Importar planilha
       </Button>
