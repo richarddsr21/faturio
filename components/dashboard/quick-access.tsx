@@ -16,7 +16,7 @@ import { MAX_IMPORT_ROWS } from "@/lib/produtos/import-products";
 import { StockMovementForm } from "@/components/estoque/stock-movement-form";
 import { SaleForm } from "@/components/vendas/sale-form";
 import { GoalForm } from "@/components/metas/goal-form";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -100,7 +100,7 @@ const quickAccessSections = dashboardSections.filter(
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-[10px] bg-muted px-3 py-2.5">
+    <div className="rounded-control bg-muted px-3 py-2.5">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="tabular-nums font-semibold text-foreground">{value}</p>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
@@ -111,7 +111,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 function ItemList({ children, empty }: { children: ReactNode[]; empty: string }) {
   if (children.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
   return (
-    <ul className="flex flex-col divide-y divide-border rounded-[10px] border border-border">
+    <ul className="flex flex-col divide-y divide-border rounded-control border border-border">
       {children}
     </ul>
   );
@@ -315,11 +315,21 @@ function SectionForm({ data, onDone }: { data: QuickViewData; onDone: () => void
 }
 
 // Montado com key={section}: cada área aberta começa com o estado limpo.
-function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onClose: () => void }) {
+type QuickView = "summary" | "form" | "import";
+
+function QuickViewDialog({
+  section,
+  onClose,
+  initialView = "summary",
+}: {
+  section: QuickViewSection;
+  onClose: () => void;
+  initialView?: QuickView;
+}) {
   const router = useRouter();
   const [data, setData] = useState<QuickViewData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"summary" | "form" | "import">("summary");
+  const [view, setView] = useState<QuickView>(initialView);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const item = quickAccessSections.find((s) => s.section === section)!;
@@ -374,7 +384,7 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
       <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary/10 text-primary">
               <Icon className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
@@ -410,7 +420,7 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
           <>
             <div className="mt-5 flex flex-col gap-4" aria-live="polite" aria-busy={!data && !error}>
               {notice && (
-                <p className="flex items-center gap-2 rounded-[10px] bg-success/10 px-3 py-2 text-sm text-success">
+                <p className="flex items-center gap-2 rounded-control bg-success/10 px-3 py-2 text-sm text-success">
                   <CircleCheck className="h-4 w-4" aria-hidden="true" />
                   {notice}
                 </p>
@@ -421,8 +431,8 @@ function QuickViewDialog({ section, onClose }: { section: QuickViewSection; onCl
                 <Summary data={data} />
               ) : (
                 <div className="flex flex-col gap-3" aria-label="Carregando">
-                  <div className="h-16 animate-pulse rounded-[10px] bg-muted" />
-                  <div className="h-28 animate-pulse rounded-[10px] bg-muted" />
+                  <div className="h-16 animate-pulse rounded-control bg-muted" />
+                  <div className="h-28 animate-pulse rounded-control bg-muted" />
                 </div>
               )}
             </div>
@@ -471,7 +481,7 @@ export function QuickAccess() {
                   aria-label={item.label}
                   aria-haspopup="dialog"
                   onClick={() => setSelected(item.section)}
-                  className="flex h-10 w-10 items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex h-10 w-10 items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                 </button>
@@ -486,5 +496,26 @@ export function QuickAccess() {
         <QuickViewDialog key={selected} section={selected} onClose={() => setSelected(null)} />
       )}
     </TooltipProvider>
+  );
+}
+
+/**
+ * Botão que abre o modal de uma área direto no formulário (ex.: "Registrar venda"
+ * na Visão geral), sem sair da página.
+ */
+export function QuickActionButton({
+  section,
+  children,
+  ...buttonProps
+}: { section: QuickViewSection } & Omit<ButtonProps, "onClick" | "type">) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} {...buttonProps}>
+        {children}
+      </Button>
+      {open && <QuickViewDialog section={section} initialView="form" onClose={() => setOpen(false)} />}
+    </>
   );
 }
