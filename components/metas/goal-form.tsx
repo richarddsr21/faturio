@@ -17,7 +17,8 @@ const formSchema = z.object({
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020),
   revenueGoal: revenueGoalSchema,
-  desiredMargin: z.number().min(0).max(99999.99, "Valor muito alto").optional(),
+  // goals.desired_margin é uma fração < 1 no banco: em % precisa ficar abaixo de 100.
+  desiredMargin: z.number().min(0).max(99.99, "A margem desejada deve ser menor que 100%").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
