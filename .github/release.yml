@@ -1,0 +1,32 @@
+# Configuração das notas de release geradas automaticamente pelo GitHub.
+# Os PRs são agrupados pelas labels abaixo. Ver docs/RELEASE.md.
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+      - release
+  categories:
+    - title: "⚠️ Breaking changes"
+      labels:
+        - breaking-change
+    - title: "✨ Funcionalidades"
+      labels:
+        - enhancement
+        - feature
+    - title: "🐛 Correções"
+      labels:
+        - bug
+    - title: "♻️ Refatoração e performance"
+      labels:
+        - refactor
+        - performance
+    - title: "📝 Documentação"
+      labels:
+        - documentation
+    - title: "🔧 Infra, dependências e chores"
+      labels:
+        - chore
+        - dependencies
+    - title: "Outras mudanças"
+      labels:
+        - "*"
