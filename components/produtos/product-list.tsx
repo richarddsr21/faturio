@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { isLowStock } from "@/lib/finance/stock";
 
 export interface ProductListItem {
   id: string;
@@ -80,7 +81,7 @@ export function ProductList({ products }: { products: ProductListItem[] }) {
                 <p className="text-xs text-muted-foreground">Estoque</p>
                 <p
                   className={
-                    product.stock_quantity < product.minimum_stock
+                    isLowStock(product.stock_quantity, product.minimum_stock)
                       ? "text-sm font-medium text-warning"
                       : "tabular-nums text-sm text-foreground"
                   }
@@ -116,7 +117,7 @@ export function ProductList({ products }: { products: ProductListItem[] }) {
                 </TableCell>
                 <TableCell
                   className={
-                    product.stock_quantity < product.minimum_stock
+                    isLowStock(product.stock_quantity, product.minimum_stock)
                       ? "font-medium text-warning"
                       : "tabular-nums"
                   }
