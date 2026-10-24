@@ -24,6 +24,11 @@ export interface MonthlyMetric {
   margin: number;
   revenueChangePercent: number | null;
   profitChangePercent: number | null;
+  /**
+   * Mês ainda em andamento: as variações comparam com o mesmo intervalo de dias do
+   * mês anterior (1–19/out contra 1–19/set), não com o mês anterior inteiro.
+   */
+  partial: boolean;
 }
 
 export interface TopProduct {
@@ -59,7 +64,16 @@ function changePercent(current: number, previous: number): number | null {
   return (current - previous) / previous;
 }
 
-export function aggregateMonthlyMetrics(sales: SaleRecord[], monthKeys: string[]): MonthlyMetric[] {
+/**
+ * Métricas por mês. Com `now`, o mês corrente (se estiver na lista) fica marcado como
+ * parcial e é comparado só com os mesmos primeiros dias do mês anterior.
+ */
+export function aggregateMonthlyMetrics(
+  sales: SaleRecord[],
+  monthKeys: string[],
+  now?: Date
+): MonthlyMetric[] {
+  const currentKey = now ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}` : null;
   const buckets = new Map<string, { revenue: number; salesCount: number; profit: number }>();
   for (const key of monthKeys) {
     buckets.set(key, { revenue: 0, salesCount: 0, profit: 0 });
@@ -77,8 +91,14 @@ export function aggregateMonthlyMetrics(sales: SaleRecord[], monthKeys: string[]
   const metrics: MonthlyMetric[] = [];
   let previous: { revenue: number; profit: number } | null = null;
 
-  for (const key of monthKeys) {
+  for (const [index, key] of monthKeys.entries()) {
     const bucket = buckets.get(key)!;
+    const partial = key === currentKey;
+    // Mês corrente: em vez do mês anterior inteiro, só os mesmos primeiros dias dele.
+    const base =
+      partial && previous && index > 0 && now
+        ? totalsUntilDay(sales, monthKeys[index - 1], now.getDate())
+        : previous;
     const margin = bucket.revenue > 0 ? bucket.profit / bucket.revenue : 0;
     metrics.push({
       month: key,
@@ -87,13 +107,25 @@ export function aggregateMonthlyMetrics(sales: SaleRecord[], monthKeys: string[]
       salesCount: bucket.salesCount,
       profit: bucket.profit,
       margin,
-      revenueChangePercent: previous ? changePercent(bucket.revenue, previous.revenue) : null,
-      profitChangePercent: previous ? changePercent(bucket.profit, previous.profit) : null,
+      revenueChangePercent: base ? changePercent(bucket.revenue, base.revenue) : null,
+      profitChangePercent: base ? changePercent(bucket.profit, base.profit) : null,
+      partial,
     });
     previous = { revenue: bucket.revenue, profit: bucket.profit };
   }
 
   return metrics;
+}
+
+function totalsUntilDay(sales: SaleRecord[], monthKey: string, lastDay: number) {
+  let revenue = 0;
+  let profit = 0;
+  for (const sale of sales) {
+    if (sale.saleDate.slice(0, 7) !== monthKey || Number(sale.saleDate.slice(8, 10)) > lastDay) continue;
+    revenue += sale.grossRevenue;
+    profit += sale.netProfit;
+  }
+  return { revenue, profit };
 }
 
 export function rankTopProducts(

@@ -18,7 +18,8 @@ export default async function RelatoriosPage({
   const { months: monthsParam } = await searchParams;
   const monthsCount = reportMonthsSchema.parse(monthsParam);
 
-  const monthKeys = buildMonthRange(monthsCount, new Date());
+  const now = new Date();
+  const monthKeys = buildMonthRange(monthsCount, now);
   const first = parseMonthKey(monthKeys[0]);
   const last = parseMonthKey(monthKeys[monthKeys.length - 1]);
   const startDate = new Date(first.year, first.monthIndex, 1).toISOString();
@@ -52,7 +53,7 @@ export default async function RelatoriosPage({
     }))
   );
 
-  const monthlyMetrics = aggregateMonthlyMetrics(saleRecords, monthKeys);
+  const monthlyMetrics = aggregateMonthlyMetrics(saleRecords, monthKeys, now);
   const topProducts = rankTopProducts(saleItemRecords, productNames);
   const periodLabel = `${monthlyMetrics[0].label} a ${monthlyMetrics[monthlyMetrics.length - 1].label}`;
 
