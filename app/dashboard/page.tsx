@@ -6,6 +6,7 @@ import { QuickAccess } from "@/components/dashboard/quick-access";
 import { calculateGoalProgress } from "@/lib/finance/goals";
 import { calculateStockPotential } from "@/lib/finance/stock-potential";
 import { calculateAverageTicket, calculateMonthProjection } from "@/lib/finance/projection";
+import { isLowStock } from "@/lib/finance/stock";
 
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -63,7 +64,7 @@ export default async function DashboardPage() {
     }))
   );
   const totalStockUnits = productsList.reduce((sum, p) => sum + p.stock_quantity, 0);
-  const lowStockCount = productsList.filter((p) => p.stock_quantity < p.minimum_stock).length;
+  const lowStockCount = productsList.filter((p) => isLowStock(p.stock_quantity, p.minimum_stock)).length;
 
   const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate();
   const monthProjection = calculateMonthProjection(totalRevenue, now.getDate(), daysInMonth);

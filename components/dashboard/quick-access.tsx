@@ -68,7 +68,7 @@ const sectionCopy: Record<QuickViewSection, SectionCopy> = {
     page: { label: "Ver todos", href: "/dashboard/produtos" },
   },
   estoque: {
-    description: "Produtos que estão abaixo do estoque mínimo.",
+    description: "Produtos no estoque mínimo ou abaixo dele.",
     formTitle: "Movimentar estoque",
     formDescription: "Registre uma entrada, um ajuste ou uma devolução.",
     createLabel: "Movimentar estoque",
@@ -191,7 +191,7 @@ function Summary({ data }: { data: QuickViewData }) {
           </ItemList>
           {data.lowStockCount > data.lowStock.length && (
             <p className="text-xs text-muted-foreground">
-              E mais {data.lowStockCount - data.lowStock.length} produto(s) abaixo do mínimo.
+              E mais {data.lowStockCount - data.lowStock.length} produto(s) no mínimo ou abaixo.
             </p>
           )}
         </div>
