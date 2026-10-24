@@ -34,7 +34,7 @@ export default function CheckoutPage() {
       setServerError(result.error ?? "Erro inesperado. Tente novamente.");
       return;
     }
-    window.location.href = result.redirectUrl;
+    window.location.assign(result.redirectUrl);
   }
 
   return (
