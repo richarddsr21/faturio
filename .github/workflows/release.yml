@@ -1,0 +1,58 @@
+name: Release
+
+# Quando um PR de branch `release/vX.Y.Z` é mesclado em `main`, cria a tag
+# `vX.Y.Z` e a GitHub Release com notas geradas automaticamente
+# (agrupadas por label conforme .github/release.yml).
+# Também pode ser disparado manualmente informando a versão.
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão (ex.: v1.2.0)"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'release/'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Resolver versão
+        id: ver
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            v="${{ github.event.inputs.version }}"
+          else
+            v="${{ github.event.pull_request.head.ref }}"
+            v="${v#release/}"
+          fi
+          [[ "$v" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "Versão inválida: $v (esperado vX.Y.Z)"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "previous=$(git describe --tags --abbrev=0 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+
+      - name: Criar tag e release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ steps.ver.outputs.version }}"
+          prev="${{ steps.ver.outputs.previous }}"
+          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then
+            echo "Tag $v já existe, nada a fazer."; exit 0
+          fi
+          args=(--title "$v" --generate-notes --target main)
+          [[ -n "$prev" ]] && args+=(--notes-start-tag "$prev")
+          gh release create "$v" "${args[@]}"
