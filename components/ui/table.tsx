@@ -43,7 +43,7 @@ const TableHead = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <th
     ref={ref}
-    className={cn("px-4 py-3 text-xs font-medium uppercase tracking-wide", className)}
+    className={cn("px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-wider", className)}
     {...props}
   />
 ));

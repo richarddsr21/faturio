@@ -20,28 +20,27 @@ export function RevenueChart({ data }: { data: RevenueChartPoint[] }) {
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={12} />
-          <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={12} />
+          <YAxis stroke="var(--muted-foreground)" fontSize={12} />
           <Tooltip
             formatter={(value) =>
               Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
             }
-            // Cor literal, não var(--color-*): o tooltip do Recharts não herdava os
-            // tokens CSS corretamente, resultando em texto escuro sobre fundo escuro.
+            // Tokens do tema (não cores fixas) para o tooltip acompanhar o tema escuro do painel.
             contentStyle={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E9E9F2",
-              borderRadius: "10px",
+              backgroundColor: "var(--card)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--control-radius)",
             }}
-            labelStyle={{ color: "#1E1B4B", fontWeight: 600 }}
-            itemStyle={{ color: "#6366F1" }}
+            labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
+            itemStyle={{ color: "var(--primary)" }}
           />
           <Line
             type="monotone"
             dataKey="revenue"
             name="Faturamento"
-            stroke="var(--color-primary)"
+            stroke="var(--primary)"
             strokeWidth={2}
             dot={false}
           />

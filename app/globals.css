@@ -23,8 +23,12 @@
   --border: #E7E5E4;
   --input: #E7E5E4;
   --ring: #0E7C5D;
+  --field: #FFFFFF;
+  --lilac: #8B5CF6;
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-button-primary: none;
+  --card-radius: 1rem;
+  --control-radius: 10px;
 }
 
 @theme inline {
@@ -50,8 +54,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-field: var(--field);
+  --color-lilac: var(--lilac);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bricolage, var(--font-geist-sans)), sans-serif;
+  --radius-card: var(--card-radius);
+  --radius-control: var(--control-radius);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -78,6 +87,7 @@
     --border: #262B28;
     --input: #262B28;
     --ring: #3FAE85;
+    --field: #161917;
   }
 }
 
@@ -112,6 +122,7 @@
   --border: #E9E9F2;
   --input: #E9E9F2;
   --ring: #6366F1;
+  --field: #FFFFFF;
   --shadow-card: 0 4px 16px rgb(99 102 241 / 0.08);
   --shadow-button-primary: 0 4px 12px rgb(99 102 241 / 0.20);
   --font-sans: var(--font-plus-jakarta);
@@ -147,9 +158,60 @@
   --border: #E9E9F2;
   --input: #E9E9F2;
   --ring: #6366F1;
+  --field: #FFFFFF;
   --shadow-card: 0 4px 16px rgb(99 102 241 / 0.08);
   --shadow-button-primary: 0 4px 12px rgb(99 102 241 / 0.20);
   --font-sans: var(--font-plus-jakarta);
+}
+
+/*
+ * Painel do cliente (app/dashboard/**): tema escuro com destaque verde-limão (#12).
+ * Aplicado ao <body> via :has() e não só ao wrapper do layout porque Dialog,
+ * DropdownMenu e Tooltip do Radix renderizam em portal direto no <body>, fora do
+ * wrapper — sem isso, os modais do painel sairiam com a paleta clara.
+ * Autocontido como os temas acima: sempre escuro, independente do SO.
+ */
+body:has(.panel-theme) {
+  --background: #09090C;
+  --foreground: #F4F4F0;
+  --card: #131318;
+  --card-foreground: #F4F4F0;
+  --primary: #D4FF3A;
+  --primary-hover: #C2F01F;
+  --primary-light: #E6FF8A;
+  --primary-foreground: #09090C;
+  --secondary: #1C1C23;
+  --secondary-foreground: #F4F4F0;
+  --muted: #1C1C23;
+  --muted-foreground: #9A9AA6;
+  --accent: #1C1C23;
+  --accent-foreground: #F4F4F0;
+  --destructive: #FF5C5C;
+  --destructive-foreground: #09090C;
+  --success: #D4FF3A;
+  --warning: #FF8A5B;
+  --info: #7CC4FF;
+  --border: #23232C;
+  --input: #23232C;
+  --ring: #D4FF3A;
+  --field: #0C0C10;
+  --lilac: #B9A8FF;
+  --shadow-card: none;
+  --shadow-button-primary: 0 0 24px -6px rgb(212 255 58 / 0.55);
+  --card-radius: 24px;
+  --control-radius: 12px;
+  color-scheme: dark;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+/* Títulos e números grandes do painel usam a fonte display. */
+.panel-theme :is(h1, h2, h3) {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+body:has(.panel-theme) ::selection {
+  background: rgb(212 255 58 / 0.3);
 }
 
 body {
