@@ -1,94 +1,58 @@
 import { createClient } from "@/lib/supabase/server";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { GoalForm } from "@/components/metas/goal-form";
+import { GoalsScreen } from "@/components/metas/goals-screen";
+import { goalHistory, previousMonthResult } from "@/lib/metas/goals-view";
 
-function formatCurrency(value: number) {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-const monthNames = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
+// O PostgREST devolve no máximo 1000 linhas por requisição; as vendas são lidas em blocos.
+const SALES_CHUNK = 1000;
 
 export default async function MetasPage() {
+  // Client da sessão: RLS restringe goals e sales às linhas do próprio usuário.
   const supabase = await createClient();
-  const { data: goals } = await supabase
+  const { data: goalsData } = await supabase
     .from("goals")
-    .select("id, month, year, revenue_goal, desired_margin")
+    .select("month, year, revenue_goal, desired_margin")
     .order("year", { ascending: false })
     .order("month", { ascending: false });
+  const goals = (goalsData ?? []).map((g) => ({
+    month: g.month,
+    year: g.year,
+    revenueGoal: Number(g.revenue_goal),
+    desiredMargin: g.desired_margin !== null ? Number(g.desired_margin) : null,
+  }));
+
+  // Só as vendas a partir do mês da meta mais antiga entram no realizado.
+  const sales: { saleDate: string; grossRevenue: number; netProfit: number }[] = [];
+  const oldest = goals.at(-1);
+  if (oldest) {
+    const since = new Date(oldest.year, oldest.month - 1, 1).toISOString();
+    for (let from = 0; ; from += SALES_CHUNK) {
+      const { data, error } = await supabase
+        .from("sales")
+        .select("sale_date, gross_revenue, net_profit")
+        .gte("sale_date", since)
+        .order("sale_date")
+        .order("id")
+        .range(from, from + SALES_CHUNK - 1);
+      if (error || !data) break;
+      sales.push(
+        ...data.map((s) => ({
+          saleDate: s.sale_date,
+          grossRevenue: Number(s.gross_revenue),
+          netProfit: Number(s.net_profit),
+        }))
+      );
+      if (data.length < SALES_CHUNK) break;
+    }
+  }
 
   const now = new Date();
+  const history = goalHistory(goals, sales, now);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Metas</h1>
-        <p className="text-muted-foreground">Defina sua meta de faturamento mês a mês.</p>
-      </div>
-
-      <GoalForm defaultMonth={now.getMonth() + 1} defaultYear={now.getFullYear()} />
-
-      {goals && goals.length > 0 && (
-        <>
-          <div className="flex flex-col gap-3 sm:hidden">
-            {goals.map((goal) => (
-              <div
-                key={goal.id}
-                className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
-              >
-                <p className="font-medium text-foreground">
-                  {monthNames[goal.month - 1]} de {goal.year}
-                </p>
-                <div className="mt-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Meta</p>
-                    <p className="tabular-nums text-sm text-foreground">
-                      {formatCurrency(Number(goal.revenue_goal))}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Margem desejada</p>
-                    <p className="tabular-nums text-sm text-foreground">
-                      {goal.desired_margin !== null
-                        ? `${(Number(goal.desired_margin) * 100).toFixed(1)}%`
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="hidden sm:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mês</TableHead>
-                  <TableHead>Meta</TableHead>
-                  <TableHead>Margem desejada</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {goals.map((goal) => (
-                  <TableRow key={goal.id}>
-                    <TableCell>
-                      {monthNames[goal.month - 1]} de {goal.year}
-                    </TableCell>
-                    <TableCell className="tabular-nums">{formatCurrency(Number(goal.revenue_goal))}</TableCell>
-                    <TableCell className="tabular-nums">
-                      {goal.desired_margin !== null
-                        ? `${(Number(goal.desired_margin) * 100).toFixed(1)}%`
-                        : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </>
-      )}
-    </div>
+    <GoalsScreen
+      history={history}
+      current={{ month: now.getMonth() + 1, year: now.getFullYear() }}
+      previous={previousMonthResult(history, now)}
+    />
   );
 }
