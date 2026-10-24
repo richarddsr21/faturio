@@ -14,6 +14,7 @@ const months: MonthlyMetric[] = [
     margin: 0.25,
     revenueChangePercent: null,
     profitChangePercent: null,
+    partial: false,
   },
   {
     month: "2026-08",
@@ -24,6 +25,7 @@ const months: MonthlyMetric[] = [
     margin: 0.28,
     revenueChangePercent: 0.2346,
     profitChangePercent: 0.3827,
+    partial: false,
   },
 ];
 
