@@ -4,10 +4,14 @@ import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import type { SettingsFieldsValues } from "@/lib/validations/settings";
 
+// Compartilhado pelos formulários de onboarding e de configurações, que têm tipos
+// de valores diferentes; os campos usados aqui existem nos dois.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface SettingsFormFieldsProps {
   register: UseFormRegister<any>;
   errors: FieldErrors<any>;
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 const fields: { name: keyof SettingsFieldsValues; label: string; step: string }[] = [
   { name: "packagingCost", label: "Custo de embalagem (R$)", step: "0.01" },
