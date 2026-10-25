@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { goalHistory, previousMonthResult, totalsByMonth } from "@/lib/metas/goals-view";
 
-const now = new Date(2026, 9, 24); // 24/out/2026
+const now = new Date("2026-10-24T12:00:00-03:00"); // 24/out/2026, horário de Brasília
 const sale = (month: number, day: number, revenue: number, profit: number) => ({
-  saleDate: new Date(2026, month - 1, day, 12).toISOString(),
+  saleDate: `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T12:00:00-03:00`,
   grossRevenue: revenue,
   netProfit: profit,
 });

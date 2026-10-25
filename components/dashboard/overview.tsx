@@ -19,6 +19,7 @@ import { InitialAvatar } from "@/components/ui/initial-avatar";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { QuickAccess, QuickActionButton } from "@/components/dashboard/quick-access";
 import { MonthSwitcher } from "@/components/dashboard/month-switcher";
+import { formatDate } from "@/lib/dates";
 import {
   percentChange,
   type CumulativePoint,
@@ -38,7 +39,7 @@ function formatPercent(fraction: number) {
 }
 
 function formatDayMonth(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return formatDate(iso, { day: "2-digit", month: "2-digit" });
 }
 
 function capitalize(text: string) {

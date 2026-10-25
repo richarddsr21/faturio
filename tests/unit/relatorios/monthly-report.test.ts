@@ -22,12 +22,12 @@ describe("formatMonthLabel", () => {
 
 describe("buildMonthRange", () => {
   it("retorna N meses terminando no mês de referência, do mais antigo pro mais novo", () => {
-    const reference = new Date(2026, 7, 15); // 15 ago 2026
+    const reference = new Date("2026-08-15T12:00:00-03:00"); // 15 ago 2026
     expect(buildMonthRange(3, reference)).toEqual(["2026-06", "2026-07", "2026-08"]);
   });
 
   it("cruza a virada de ano corretamente", () => {
-    const reference = new Date(2026, 1, 10); // 10 fev 2026
+    const reference = new Date("2026-02-10T12:00:00-03:00"); // 10 fev 2026
     expect(buildMonthRange(3, reference)).toEqual(["2025-12", "2026-01", "2026-02"]);
   });
 });
@@ -37,9 +37,9 @@ describe("aggregateMonthlyMetrics", () => {
 
   it("soma faturamento, vendas e lucro por mês, incluindo meses sem venda", () => {
     const sales = [
-      { saleDate: "2026-06-05T00:00:00.000Z", grossRevenue: 1000, netProfit: 300 },
-      { saleDate: "2026-06-20T00:00:00.000Z", grossRevenue: 500, netProfit: 100 },
-      { saleDate: "2026-08-01T00:00:00.000Z", grossRevenue: 2000, netProfit: 800 },
+      { saleDate: "2026-06-05T10:00:00-03:00", grossRevenue: 1000, netProfit: 300 },
+      { saleDate: "2026-06-20T10:00:00-03:00", grossRevenue: 500, netProfit: 100 },
+      { saleDate: "2026-08-01T10:00:00-03:00", grossRevenue: 2000, netProfit: 800 },
     ];
 
     const result = aggregateMonthlyMetrics(sales, monthKeys);
@@ -94,7 +94,7 @@ describe("aggregateMonthlyMetrics", () => {
       { saleDate: "2026-09-28T12:00:00.000Z", grossRevenue: 1000, netProfit: 500 },
       { saleDate: "2026-10-10T12:00:00.000Z", grossRevenue: 150, netProfit: 50 },
     ];
-    const result = aggregateMonthlyMetrics(sales, ["2026-09", "2026-10"], new Date(2026, 9, 19));
+    const result = aggregateMonthlyMetrics(sales, ["2026-09", "2026-10"], new Date("2026-10-19T12:00:00-03:00"));
     expect(result[0].partial).toBe(false);
     expect(result[1].partial).toBe(true);
     expect(result[1].revenueChangePercent).toBeCloseTo(0.5);
@@ -103,7 +103,7 @@ describe("aggregateMonthlyMetrics", () => {
 
   it("começo do mês sem vendas e sem vendas no mesmo período anterior não mostra -100%", () => {
     const sales = [{ saleDate: "2026-09-28T12:00:00.000Z", grossRevenue: 1000, netProfit: 500 }];
-    const result = aggregateMonthlyMetrics(sales, ["2026-09", "2026-10"], new Date(2026, 9, 19));
+    const result = aggregateMonthlyMetrics(sales, ["2026-09", "2026-10"], new Date("2026-10-19T12:00:00-03:00"));
     expect(result[1].revenueChangePercent).toBe(0);
   });
 
@@ -112,7 +112,7 @@ describe("aggregateMonthlyMetrics", () => {
       { saleDate: "2026-08-28T12:00:00.000Z", grossRevenue: 100, netProfit: 10 },
       { saleDate: "2026-09-02T12:00:00.000Z", grossRevenue: 200, netProfit: 20 },
     ];
-    const result = aggregateMonthlyMetrics(sales, ["2026-08", "2026-09", "2026-10"], new Date(2026, 9, 1));
+    const result = aggregateMonthlyMetrics(sales, ["2026-08", "2026-09", "2026-10"], new Date("2026-10-01T12:00:00-03:00"));
     expect(result[1].revenueChangePercent).toBeCloseTo(1);
     expect(result[1].partial).toBe(false);
   });

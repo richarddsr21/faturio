@@ -17,14 +17,14 @@ describe("parseSalesPeriod", () => {
 });
 
 describe("periodStart", () => {
-  const now = new Date(2026, 9, 24, 15, 30);
+  const now = new Date("2026-10-24T15:30:00-03:00");
 
   it("7 dias conta hoje e os 6 anteriores, desde a meia-noite", () => {
-    expect(periodStart("7", now)).toEqual(new Date(2026, 9, 18));
+    expect(periodStart("7", now)).toEqual(new Date("2026-10-18T00:00:00-03:00"));
   });
 
   it("atravessa o mês", () => {
-    expect(periodStart("30", now)).toEqual(new Date(2026, 8, 25));
+    expect(periodStart("30", now)).toEqual(new Date("2026-09-25T00:00:00-03:00"));
   });
 
   it("tudo não tem início", () => {
@@ -64,9 +64,9 @@ describe("saleMargin", () => {
 describe("groupByMonth", () => {
   it("agrupa vendas consecutivas do mesmo mês, na ordem recebida", () => {
     const groups = groupByMonth([
-      { id: "a", saleDate: new Date(2026, 8, 28, 12).toISOString() },
-      { id: "b", saleDate: new Date(2026, 8, 27, 12).toISOString() },
-      { id: "c", saleDate: new Date(2026, 7, 10, 12).toISOString() },
+      { id: "a", saleDate: "2026-09-28T12:00:00-03:00" },
+      { id: "b", saleDate: "2026-09-27T12:00:00-03:00" },
+      { id: "c", saleDate: "2026-08-10T12:00:00-03:00" },
     ]);
     expect(groups.map((g) => [g.label, g.items.map((i) => i.id)])).toEqual([
       ["setembro 2026", ["a", "b"]],

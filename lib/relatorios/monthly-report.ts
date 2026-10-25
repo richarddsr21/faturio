@@ -1,3 +1,7 @@
+import { monthKeyOf, zonedParts } from "@/lib/dates";
+
+// Mês e dia de cada venda no horário de Brasília, não no prefixo UTC de sale_date.
+
 const MONTH_ABBREVIATIONS = [
   "jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez",
@@ -49,10 +53,11 @@ export function formatMonthLabel(monthKey: string): string {
 }
 
 export function buildMonthRange(monthsCount: number, referenceDate: Date): string[] {
+  const { year, month } = zonedParts(referenceDate);
   const keys: string[] = [];
   for (let i = monthsCount - 1; i >= 0; i--) {
-    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - i, 1);
-    keys.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`);
+    const date = new Date(Date.UTC(year, month - 1 - i, 1));
+    keys.push(`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`);
   }
   return keys;
 }
@@ -73,14 +78,14 @@ export function aggregateMonthlyMetrics(
   monthKeys: string[],
   now?: Date
 ): MonthlyMetric[] {
-  const currentKey = now ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}` : null;
+  const currentKey = now ? monthKeyOf(now) : null;
   const buckets = new Map<string, { revenue: number; salesCount: number; profit: number }>();
   for (const key of monthKeys) {
     buckets.set(key, { revenue: 0, salesCount: 0, profit: 0 });
   }
 
   for (const sale of sales) {
-    const monthKey = sale.saleDate.slice(0, 7);
+    const monthKey = monthKeyOf(sale.saleDate);
     const bucket = buckets.get(monthKey);
     if (!bucket) continue;
     bucket.revenue += sale.grossRevenue;
@@ -97,7 +102,7 @@ export function aggregateMonthlyMetrics(
     // Mês corrente: em vez do mês anterior inteiro, só os mesmos primeiros dias dele.
     const base =
       partial && previous && index > 0 && now
-        ? totalsUntilDay(sales, monthKeys[index - 1], now.getDate())
+        ? totalsUntilDay(sales, monthKeys[index - 1], zonedParts(now).day)
         : previous;
     const margin = bucket.revenue > 0 ? bucket.profit / bucket.revenue : 0;
     metrics.push({
@@ -121,7 +126,7 @@ function totalsUntilDay(sales: SaleRecord[], monthKey: string, lastDay: number) 
   let revenue = 0;
   let profit = 0;
   for (const sale of sales) {
-    if (sale.saleDate.slice(0, 7) !== monthKey || Number(sale.saleDate.slice(8, 10)) > lastDay) continue;
+    if (monthKeyOf(sale.saleDate) !== monthKey || zonedParts(sale.saleDate).day > lastDay) continue;
     revenue += sale.grossRevenue;
     profit += sale.netProfit;
   }

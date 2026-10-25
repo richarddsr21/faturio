@@ -1,7 +1,10 @@
 // Cálculos puros das métricas do /admin (sem acesso a banco) — testados em
 // tests/unit/admin/metrics.test.ts.
 
-const TIME_ZONE = "America/Sao_Paulo";
+import { monthKeyOf } from "@/lib/dates";
+
+export { monthKeyOf };
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const INACTIVE_AFTER_DAYS = 30;
@@ -17,18 +20,6 @@ export interface MonthBucket {
 export interface MonthlyPoint {
   label: string;
   value: number;
-}
-
-/** Mês (yyyy-mm) de um instante, no fuso de São Paulo. */
-export function monthKeyOf(date: Date | string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(new Date(date));
-  const year = parts.find((p) => p.type === "year")!.value;
-  const month = parts.find((p) => p.type === "month")!.value;
-  return `${year}-${month}`;
 }
 
 /** Os últimos `count` meses até o mês de `now` (inclusive), do mais antigo ao mais recente. */
