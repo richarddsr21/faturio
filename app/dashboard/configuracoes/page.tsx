@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { SalesChannelsForm } from "@/components/settings/sales-channels-form";
 
 export default async function ConfiguracoesPage() {
   // Client da sessão: RLS restringe settings e products às linhas do próprio usuário.
@@ -8,7 +9,7 @@ export default async function ConfiguracoesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: settings }, { data: products }] = await Promise.all([
+  const [{ data: settings }, { data: products }, { data: channels }] = await Promise.all([
     supabase
       .from("settings")
       .select("packaging_cost, gift_cost, shipping_cost, admin_fee, card_fee, traffic_cost, desired_margin")
@@ -22,6 +23,11 @@ export default async function ConfiguracoesPage() {
       .not("current_price", "is", null)
       .order("name")
       .limit(50),
+    supabase
+      .from("sales_channels")
+      .select("id, name, commission, fixed_fee, active")
+      .order("position")
+      .order("created_at"),
   ]);
 
   return (
@@ -54,6 +60,15 @@ export default async function ConfiguracoesPage() {
             entryShipping: Number(p.entry_shipping ?? 0),
             price: Number(p.current_price),
           }))}
+      />
+      <SalesChannelsForm
+        channels={(channels ?? []).map((c) => ({
+          id: c.id,
+          name: c.name,
+          commission: Number(c.commission),
+          fixedFee: Number(c.fixed_fee),
+          active: c.active,
+        }))}
       />
     </div>
   );

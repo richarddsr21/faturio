@@ -306,7 +306,7 @@ function SectionForm({ data, onDone }: { data: QuickViewData; onDone: () => void
       return <StockQuickForm products={data.products} onDone={onDone} />;
     case "vendas":
       return data.products.length > 0 ? (
-        <SaleForm products={data.products} onRegistered={onDone} />
+        <SaleForm products={data.products} channels={data.channels} adminFee={data.adminFee} onRegistered={onDone} />
       ) : (
         <NeedsProducts />
       );

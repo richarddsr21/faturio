@@ -1,13 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { SaleForm } from "@/components/vendas/sale-form";
+import { loadSaleFormOptions } from "@/lib/vendas/sale-form-options";
 
 export default async function NovaVendaPage() {
   const supabase = await createClient();
-  const { data: products } = await supabase
-    .from("products")
-    .select("id, name, current_price")
-    .eq("status", "active")
-    .order("name");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const [{ data: products }, { channels, adminFee }] = await Promise.all([
+    supabase.from("products").select("id, name, current_price").eq("status", "active").order("name"),
+    loadSaleFormOptions(supabase, user!.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -20,6 +23,8 @@ export default async function NovaVendaPage() {
           name: p.name,
           currentPrice: p.current_price !== null ? Number(p.current_price) : 0,
         }))}
+        channels={channels}
+        adminFee={adminFee}
       />
     </div>
   );
