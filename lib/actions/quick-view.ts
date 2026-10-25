@@ -54,7 +54,7 @@ export type QuickViewData =
         grossRevenue: number;
       }[];
       /** Produtos ativos para o formulário de venda. */
-      products: { id: string; name: string; currentPrice: number }[];
+      products: { id: string; name: string; currentPrice: number; adminFee: number | null }[];
     } & SaleFormOptions
   | {
       section: "metas";
@@ -190,7 +190,7 @@ export async function getQuickView(section: QuickViewSection): Promise<QuickView
           .limit(RECENT_LIMIT),
         supabase
           .from("products")
-          .select("id, name, current_price")
+          .select("id, name, current_price, admin_fee")
           .eq("user_id", user.id)
           .eq("status", "active")
           .order("name"),
@@ -218,6 +218,7 @@ export async function getQuickView(section: QuickViewSection): Promise<QuickView
             id: p.id,
             name: p.name,
             currentPrice: p.current_price !== null ? Number(p.current_price) : 0,
+            adminFee: p.admin_fee !== null ? Number(p.admin_fee) : null,
           })),
         },
       };

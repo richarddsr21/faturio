@@ -49,7 +49,6 @@ export async function createProduct(
       shipping_cost: parsed.data.shippingCost ?? null,
       gift_cost: parsed.data.giftCost ?? null,
       admin_fee: parsed.data.adminFee ?? null,
-      card_fee: parsed.data.cardFee ?? null,
     })
     .select()
     .single();
@@ -126,7 +125,6 @@ export async function updateProduct(
       shipping_cost: parsed.data.shippingCost ?? null,
       gift_cost: parsed.data.giftCost ?? null,
       admin_fee: parsed.data.adminFee ?? null,
-      card_fee: parsed.data.cardFee ?? null,
       ...(stockDelta !== 0 ? { stock_quantity: parsed.data.currentStock } : {}),
       updated_at: new Date().toISOString(),
     })

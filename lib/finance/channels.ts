@@ -1,6 +1,7 @@
-// Taxas de uma venda por canal (#14). Mesma conta do register_sale
-// (migration 20261025000000_sales_channels): a comissão do canal substitui a taxa de
-// cartão de settings; a taxa administrativa continua valendo em todo canal.
+// Taxas de uma venda por canal (#14, #70). Mesma conta do register_sale
+// (migration 20261025000001_register_sale_product_costs): a comissão do canal substitui a
+// taxa de cartão de settings; a taxa administrativa vale por item (a do produto ou a de
+// settings) sobre o valor do item, com o desconto rateado.
 
 export interface ChannelFees {
   /** Fração (0,14 = 14%). */
@@ -9,17 +10,29 @@ export interface ChannelFees {
   fixedFee: number;
 }
 
-export interface SaleFeesInput {
-  /** Faturamento já com desconto. */
-  grossRevenue: number;
-  totalQuantity: number;
-  /** Fração, de settings. */
+export interface SaleFeesItem {
+  quantity: number;
+  unitPrice: number;
+  /** Fração: a própria do produto ou, sem ela, a de settings. */
   adminFee: number;
+}
+
+export interface SaleFeesInput {
+  items: SaleFeesItem[];
+  discount: number;
   channel: ChannelFees;
 }
 
-export function calculateSaleFees({ grossRevenue, totalQuantity, adminFee, channel }: SaleFeesInput): number {
-  return grossRevenue * (adminFee + channel.commission) + channel.fixedFee * totalQuantity;
+export function calculateSaleFees({ items, discount, channel }: SaleFeesInput): number {
+  const itemsTotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const grossRevenue = itemsTotal - discount;
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  const adminAmount =
+    itemsTotal > 0
+      ? (items.reduce((sum, item) => sum + item.quantity * item.unitPrice * item.adminFee, 0) * grossRevenue) /
+        itemsTotal
+      : 0;
+  return adminAmount + grossRevenue * channel.commission + channel.fixedFee * totalQuantity;
 }
 
 /** "14% + R$ 4,00 por peça", "Sem taxa", ... para mostrar ao escolher o canal. */

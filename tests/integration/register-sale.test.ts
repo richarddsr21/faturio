@@ -265,4 +265,45 @@ describe("register_sale (função Postgres)", () => {
       .insert({ user_id: userId, name: "Canal intruso" });
     expect(insertError).not.toBeNull();
   });
+
+  it("usa os custos próprios do produto: maior custo por pedido e taxa administrativa por item (#70)", async () => {
+    // Settings do usuário: embalagem 2, frete 5, brinde 0, adm 5%. Loja física: 3% (herdou o cartão).
+    const { data: withOverrides } = await admin
+      .from("products")
+      .insert({ user_id: userId, name: "Com custo próprio", cost: 30, stock_quantity: 5, packaging_cost: 6, admin_fee: 0.1 })
+      .select("id")
+      .single();
+    const { data: plain } = await admin
+      .from("products")
+      .insert({ user_id: userId, name: "Sem custo próprio", cost: 40, stock_quantity: 5 })
+      .select("id")
+      .single();
+
+    const client = await signInAs(userEmail, password);
+    const { data: saleId, error } = await client.rpc("register_sale", {
+      p_items: [
+        { product_id: withOverrides!.id, quantity: 1, unit_price: 100 },
+        { product_id: plain!.id, quantity: 1, unit_price: 100 },
+      ],
+      p_payment_method: "pix",
+      p_discount: 20,
+      p_channel_id: await channelId(userId, "loja_fisica"),
+    });
+    expect(error).toBeNull();
+
+    const { data: sale } = await admin
+      .from("sales")
+      .select("gross_revenue, fees, packaging_cost, shipping_cost, gift_cost, net_profit")
+      .eq("id", saleId)
+      .single();
+    expect(Number(sale!.gross_revenue)).toBeCloseTo(180, 2);
+    // Adm por item com o desconto rateado: (100 × 10% + 100 × 5%) × 180/200 = 13,50; + 180 × 3% = 5,40
+    expect(Number(sale!.fees)).toBeCloseTo(18.9, 2);
+    // Maior entre os produtos: embalagem 6 (própria) contra 2 (settings); frete 5 nos dois
+    expect(Number(sale!.packaging_cost)).toBeCloseTo(6, 2);
+    expect(Number(sale!.shipping_cost)).toBeCloseTo(5, 2);
+    expect(Number(sale!.gift_cost)).toBeCloseTo(0, 2);
+    // (100 − 30) + (100 − 40) − 20 de desconto − 18,90 − 5 − 6
+    expect(Number(sale!.net_profit)).toBeCloseTo(80.1, 2);
+  });
 });
