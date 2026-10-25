@@ -111,7 +111,11 @@ export function SettingsForm({
           </div>
         </Group>
 
-        <Group icon={Percent} title="Taxas" description="Percentual descontado do valor da venda">
+        <Group
+          icon={Percent}
+          title="Taxas"
+          description="A administrativa entra em toda venda. A de cartão vale para o preço sugerido; nas vendas, conta a taxa do canal."
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <PercentField id="adminFee" label="Taxa administrativa" error={errors.adminFee?.message} registration={register("adminFee", { valueAsNumber: true })} />
             <PercentField id="cardFee" label="Taxa de cartão" error={errors.cardFee?.message} registration={register("cardFee", { valueAsNumber: true })} />

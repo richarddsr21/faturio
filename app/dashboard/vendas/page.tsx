@@ -42,7 +42,9 @@ export default async function VendasPage({
 
   // Busca uma venda a mais que o limite só para saber se existe próxima página.
   const listPromise = filtered(
-    supabase.from("sales").select("id, sale_date, payment_method, gross_revenue, net_profit, customer_name")
+    supabase
+      .from("sales")
+      .select("id, sale_date, payment_method, gross_revenue, net_profit, customer_name, sales_channels(name)")
   )
     .order("sale_date", { ascending: false })
     .limit(limit + 1);
@@ -101,6 +103,8 @@ export default async function VendasPage({
         grossRevenue: Number(s.gross_revenue),
         netProfit: Number(s.net_profit),
         customerName: s.customer_name,
+        // Relação muitos-para-um: o PostgREST devolve um objeto (ou null), não uma lista.
+        channelName: (s.sales_channels as unknown as { name: string } | null)?.name ?? null,
       }))}
       period={period}
       customerQuery={customerQuery}

@@ -60,6 +60,19 @@ export async function completeOnboarding(
     return { success: false, error: "Não foi possível criar a meta do mês. Tente novamente." };
   }
 
+  // O canal "Loja física / maquininha" nasce com a taxa de cartão que settings tinha (zero, numa
+  // conta nova); a taxa informada aqui é a da maquininha. Fica antes de marcar o onboarding como
+  // concluído: se falhar, o reenvio grava de novo.
+  const { error: channelError } = await supabase
+    .from("sales_channels")
+    .update({ commission: parsed.data.cardFee })
+    .eq("user_id", user.id)
+    .eq("slug", "loja_fisica");
+
+  if (channelError) {
+    return { success: false, error: "Não foi possível salvar a taxa da maquininha. Tente novamente." };
+  }
+
   const { error: settingsError } = await supabase
     .from("settings")
     .update({

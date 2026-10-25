@@ -44,6 +44,8 @@ export interface SaleListItem {
   grossRevenue: number;
   netProfit: number;
   customerName: string | null;
+  /** null nas vendas registradas antes dos canais. */
+  channelName: string | null;
 }
 
 export interface SalesScreenProps {
@@ -225,6 +227,7 @@ function SaleRow({ sale }: { sale: SaleListItem }) {
         </p>
         <p className="text-xs text-muted-foreground">
           {formatDate(sale.saleDate)}
+          {sale.channelName && <> · {sale.channelName}</>}
           <span className="md:hidden"> · {paymentMethodLabel(sale.paymentMethod)}</span>
         </p>
       </div>
