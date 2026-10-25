@@ -137,7 +137,25 @@ gift_cost         numeric(10,2) not null default 0
 traffic_cost      numeric(10,2) not null default 0
 net_profit        numeric(10,2) not null
 created_at        timestamptz not null default now()
+customer_name     text check (char_length(customer_name) <= 120)
+channel_id        uuid  -- FK composta (channel_id, user_id) → sales_channels; null nas vendas antigas
 ```
+
+### `sales_channels`
+```
+id            uuid primary key default gen_random_uuid()
+user_id       uuid not null references auth.users(id)
+name          text not null  -- único por usuário, sem diferenciar maiúsculas
+slug          text  -- canais padrão: 'shopee' | 'mercado_livre' | 'tiktok_shop' | 'instagram_whatsapp' | 'loja_fisica' | 'pix'
+commission    numeric(5,4) not null default 0 check (commission >= 0 and commission < 1)
+fixed_fee     numeric(10,2) not null default 0 check (fixed_fee >= 0)  -- R$ por peça
+active        boolean not null default true
+position      integer not null default 0
+created_at    timestamptz not null default now()
+```
+Os seis canais padrão são criados por trigger junto com `settings`, com taxas zeradas — exceto
+a loja física, que herda `card_fee` (no onboarding, a taxa de cartão informada vai para ela).
+Sem delete: canal usado em vendas é desativado, não excluído.
 
 ### `sale_items`
 ```
@@ -295,6 +313,9 @@ isoladamente com Vitest e reaproveitadas tanto no dashboard quanto nos relatóri
 - Toda venda gera: 1 linha em `sales`, N linhas em `sale_items`, N movimentos em
   `inventory_movements` (`type='sale'`), e decrementa `products.stock_quantity` — tudo em uma
   única transação no banco (ou tudo aplica, ou nada aplica).
+- Taxas da venda (`sales.fees`): com canal, `faturamento × (taxa administrativa + comissão do
+  canal) + taxa fixa do canal × peças` — a comissão do canal substitui a taxa de cartão. Vendas
+  sem canal (anteriores a #14) seguem `faturamento × (taxa administrativa + taxa de cartão)`.
 - `sale_items.product_id` é validado como pertencente ao mesmo `user_id` da venda antes do
   insert (checagem explícita, além da RLS).
 

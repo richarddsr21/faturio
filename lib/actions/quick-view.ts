@@ -6,6 +6,7 @@ import { calculateGoalProgress } from "@/lib/finance/goals";
 import { calculateAverageTicket } from "@/lib/finance/projection";
 import { isLowStock } from "@/lib/finance/stock";
 import { startOfZonedDay, zonedMonthStart, zonedParts } from "@/lib/dates";
+import { loadSaleFormOptions, type SaleFormOptions } from "@/lib/vendas/sale-form-options";
 
 const RECENT_LIMIT = 5;
 const LOW_STOCK_LIMIT = 8;
@@ -54,7 +55,7 @@ export type QuickViewData =
       }[];
       /** Produtos ativos para o formulário de venda. */
       products: { id: string; name: string; currentPrice: number }[];
-    }
+    } & SaleFormOptions
   | {
       section: "metas";
       month: number;
@@ -174,7 +175,7 @@ export async function getQuickView(section: QuickViewSection): Promise<QuickView
 
     case "vendas": {
       const startOfToday = startOfZonedDay(now).toISOString();
-      const [{ data: monthSales, error }, { data: recent }, { data: products }] = await Promise.all([
+      const [{ data: monthSales, error }, { data: recent }, { data: products }, formOptions] = await Promise.all([
         supabase
           .from("sales")
           .select("sale_date, gross_revenue")
@@ -193,12 +194,14 @@ export async function getQuickView(section: QuickViewSection): Promise<QuickView
           .eq("user_id", user.id)
           .eq("status", "active")
           .order("name"),
+        loadSaleFormOptions(supabase, user.id),
       ]);
       if (error) return failed;
       return {
         success: true,
         data: {
           section: "vendas",
+          ...formOptions,
           todayRevenue: monthSales
             .filter((s) => isOnOrAfter(s.sale_date, startOfToday))
             .reduce((sum, s) => sum + Number(s.gross_revenue), 0),

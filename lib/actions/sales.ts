@@ -12,6 +12,7 @@ const saleItemSchema = z.object({
 const saleSchema = z.object({
   items: z.array(saleItemSchema).min(1, "Adicione ao menos um produto"),
   paymentMethod: z.string().min(1, "Informe a forma de pagamento"),
+  channelId: z.string().uuid("Selecione o canal de venda"),
   discount: z.number().min(0).default(0),
   customerName: z.string().trim().max(120, "Nome do cliente muito longo (máx. 120 caracteres)").optional(),
 });
@@ -40,11 +41,15 @@ export async function registerSale(
     p_payment_method: parsed.data.paymentMethod,
     p_discount: parsed.data.discount,
     p_customer_name: parsed.data.customerName || null,
+    p_channel_id: parsed.data.channelId,
   });
 
   if (error) {
     if (error.message.includes("estoque insuficiente")) {
       return { success: false, error: "Estoque insuficiente para um ou mais produtos." };
+    }
+    if (error.message.includes("Canal de venda")) {
+      return { success: false, error: "Esse canal de venda foi desativado. Escolha outro." };
     }
     return { success: false, error: "Não foi possível registrar a venda. Tente novamente." };
   }
