@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { formatDate as formatZonedDate, formatDateTime as formatZonedDateTime } from "@/lib/dates";
 import { subscriptionStatusLabels } from "@/components/admin/status-labels";
 
 type ActionKind = "block" | "unblock" | "grant" | "resend";
@@ -62,8 +63,7 @@ const actionCopy: Record<
 
 function formatDate(value: string | null, withTime = false) {
   if (!value) return "—";
-  const date = new Date(value);
-  return withTime ? date.toLocaleString("pt-BR") : date.toLocaleDateString("pt-BR");
+  return withTime ? formatZonedDateTime(value) : formatZonedDate(value);
 }
 
 function formatCurrency(value: number) {

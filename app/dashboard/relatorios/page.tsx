@@ -9,6 +9,7 @@ import {
   type SaleItemRecord,
 } from "@/lib/relatorios/monthly-report";
 import ReportView from "@/components/relatorios/report-view";
+import { zonedMonthStart } from "@/lib/dates";
 
 export default async function RelatoriosPage({
   searchParams,
@@ -22,8 +23,8 @@ export default async function RelatoriosPage({
   const monthKeys = buildMonthRange(monthsCount, now);
   const first = parseMonthKey(monthKeys[0]);
   const last = parseMonthKey(monthKeys[monthKeys.length - 1]);
-  const startDate = new Date(first.year, first.monthIndex, 1).toISOString();
-  const endDate = new Date(last.year, last.monthIndex + 1, 1).toISOString();
+  const startDate = zonedMonthStart(first.year, first.monthIndex + 1).toISOString();
+  const endDate = zonedMonthStart(last.year, last.monthIndex + 2).toISOString();
 
   const supabase = await createClient();
   const [{ data: sales }, { data: products }] = await Promise.all([

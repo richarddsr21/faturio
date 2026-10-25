@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { CustomerDetailsDialog } from "@/components/admin/customer-details-dialog";
+import { formatDate } from "@/lib/dates";
 import { subscriptionStatusLabels } from "@/components/admin/status-labels";
 
 export interface CustomerRow {
@@ -122,7 +123,7 @@ export function CustomerList({ customers }: { customers: CustomerRow[] }) {
               <StatusBadge status={customer.status} />
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Desde {new Date(customer.created_at).toLocaleDateString("pt-BR")}
+              Desde {formatDate(customer.created_at)}
             </p>
           </button>
         ))}
@@ -149,7 +150,7 @@ export function CustomerList({ customers }: { customers: CustomerRow[] }) {
                 <TableCell className="font-medium">{customer.name}</TableCell>
                 <TableCell className="text-muted-foreground">{customer.email}</TableCell>
                 <TableCell className="tabular-nums">
-                  {new Date(customer.created_at).toLocaleDateString("pt-BR")}
+                  {formatDate(customer.created_at)}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={customer.status} />

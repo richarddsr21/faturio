@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import type { AttentionItem, AttentionReason } from "@/lib/admin/metrics";
 import { INACTIVE_AFTER_DAYS } from "@/lib/admin/metrics";
 import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/dates";
 import { CustomerDetailsDialog } from "@/components/admin/customer-details-dialog";
 
 const reasonLabels: Record<AttentionReason, string> = {
@@ -16,7 +17,7 @@ const reasonLabels: Record<AttentionReason, string> = {
 function detail(item: AttentionItem) {
   if (item.reason === "never_logged_in") return "Pagou e ainda não fez o primeiro login.";
   if (item.reason === "onboarding_pending") return "Entrou, mas não terminou a configuração inicial.";
-  return `Último login em ${new Date(item.lastSignInAt!).toLocaleDateString("pt-BR")}.`;
+  return `Último login em ${formatDate(item.lastSignInAt!)}.`;
 }
 
 export function AttentionList({ items }: { items: AttentionItem[] }) {

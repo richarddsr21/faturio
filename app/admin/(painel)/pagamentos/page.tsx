@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTime } from "@/lib/dates";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DeleteCheckoutButton } from "@/components/admin/delete-checkout-button";
 
@@ -46,7 +47,7 @@ export default async function AdminPagamentosPage() {
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
-                    {new Date(checkout.created_at).toLocaleString("pt-BR")}
+                    {formatDateTime(checkout.created_at)}
                   </p>
                   {checkout.status === "pending" && (
                     <DeleteCheckoutButton checkoutId={checkout.id} customerName={checkout.name} />
@@ -72,7 +73,7 @@ export default async function AdminPagamentosPage() {
                 {checkouts.map((checkout) => (
                   <TableRow key={checkout.id}>
                     <TableCell className="tabular-nums">
-                      {new Date(checkout.created_at).toLocaleString("pt-BR")}
+                      {formatDateTime(checkout.created_at)}
                     </TableCell>
                     <TableCell className="font-medium">{checkout.name}</TableCell>
                     <TableCell className="text-muted-foreground">{checkout.email}</TableCell>

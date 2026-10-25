@@ -1,10 +1,8 @@
 import { isLowStock } from "@/lib/finance/stock";
+import { daysInMonth as calendarDaysInMonth, zonedMidnight, zonedParts } from "@/lib/dates";
 
 // Cálculos da Visão geral, sem I/O: a página busca os dados e estas funções montam
-// o que cada card mostra.
-//
-// Datas usam o fuso do servidor (getDate/getMonth locais), igual ao resto do painel
-// por enquanto — o horário de Brasília entra junto em todas as telas na #6.
+// o que cada card mostra. Dia e mês sempre no horário de Brasília (lib/dates).
 
 export const monthNames = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -38,9 +36,15 @@ export interface OverviewProduct {
   minimumStock: number;
 }
 
+/** Mês de `now` no horário de Brasília. */
+export function yearMonthOf(now: Date): YearMonth {
+  const { year, month } = zonedParts(now);
+  return { year, month };
+}
+
 /** Lê `?mes=AAAA-MM`. Inválido ou no futuro volta para o mês atual. */
 export function parseMonthParam(param: string | undefined, now: Date): YearMonth {
-  const current = { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const current = yearMonthOf(now);
   const match = param?.match(/^(\d{4})-(\d{2})$/);
   if (!match) return current;
   const year = Number(match[1]);
@@ -64,12 +68,12 @@ export function isSameMonth(a: YearMonth, b: YearMonth): boolean {
 }
 
 export function daysInMonth({ year, month }: YearMonth): number {
-  return new Date(year, month, 0).getDate();
+  return calendarDaysInMonth(year, month);
 }
 
-/** Intervalo [start, end) do mês inteiro. */
+/** Intervalo [start, end) do mês inteiro, de meia-noite a meia-noite em Brasília. */
 export function monthRange(ym: YearMonth): { start: Date; end: Date } {
-  return { start: new Date(ym.year, ym.month - 1, 1), end: new Date(ym.year, ym.month, 1) };
+  return { start: zonedMidnight(ym.year, ym.month, 1), end: zonedMidnight(ym.year, ym.month + 1, 1) };
 }
 
 /**
@@ -81,11 +85,10 @@ export function comparisonRange(
   ym: YearMonth,
   now: Date
 ): { start: Date; end: Date; partial: boolean } {
-  const previous = monthRange(shiftMonth(ym, -1));
-  const isCurrent = isSameMonth(ym, { year: now.getFullYear(), month: now.getMonth() + 1 });
-  if (!isCurrent) return { ...previous, partial: false };
-  const cut = new Date(previous.start);
-  cut.setDate(now.getDate() + 1);
+  const previousMonth = shiftMonth(ym, -1);
+  const previous = monthRange(previousMonth);
+  if (!isSameMonth(ym, yearMonthOf(now))) return { ...previous, partial: false };
+  const cut = zonedMidnight(previousMonth.year, previousMonth.month, zonedParts(now).day + 1);
   if (cut >= previous.end) return { ...previous, partial: false };
   return { start: previous.start, end: cut, partial: true };
 }
@@ -151,12 +154,11 @@ export interface CumulativePoint {
 /** Faturamento acumulado dia a dia. No mês atual, para no dia de hoje. */
 export function cumulativeRevenue(sales: OverviewSale[], ym: YearMonth, now: Date): CumulativePoint[] {
   const totalDays = daysInMonth(ym);
-  const isCurrent = isSameMonth(ym, { year: now.getFullYear(), month: now.getMonth() + 1 });
-  const lastDay = isCurrent ? now.getDate() : totalDays;
+  const lastDay = isSameMonth(ym, yearMonthOf(now)) ? zonedParts(now).day : totalDays;
 
   const byDay = new Array<number>(totalDays + 1).fill(0);
   for (const sale of sales) {
-    byDay[new Date(sale.saleDate).getDate()] += sale.grossRevenue;
+    byDay[zonedParts(sale.saleDate).day] += sale.grossRevenue;
   }
 
   let running = 0;

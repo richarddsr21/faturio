@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { zonedParts } from "@/lib/dates";
 import {
   revenueGoalSchema,
   settingsFieldsBaseSchema,
@@ -43,12 +44,12 @@ export async function completeOnboarding(
   // Usamos upsert (com onConflict na mesma tripla da constraint unique(user_id, month, year))
   // para que um reenvio após falha no update de settings não esbarre na constraint unique —
   // ele apenas regrava a mesma meta em vez de falhar.
-  const now = new Date();
+  const { month, year } = zonedParts(new Date());
   const { error: goalError } = await supabase.from("goals").upsert(
     {
       user_id: user.id,
-      month: now.getMonth() + 1,
-      year: now.getFullYear(),
+      month,
+      year,
       revenue_goal: parsed.data.revenueGoal,
       desired_margin: parsed.data.desiredMargin,
     },

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Select } from "@/components/ui/select";
+import { formatDate } from "@/lib/dates";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function formatCurrency(value: number) {
@@ -213,7 +214,7 @@ function Summary({ data }: { data: QuickViewData }) {
               <Row
                 key={s.id}
                 title={s.customerName ?? "Sem cliente"}
-                subtitle={`${new Date(s.saleDate).toLocaleDateString("pt-BR")} · ${
+                subtitle={`${formatDate(s.saleDate)} · ${
                   paymentMethodLabels[s.paymentMethod] ?? s.paymentMethod
                 }`}
                 value={formatCurrency(s.grossRevenue)}
