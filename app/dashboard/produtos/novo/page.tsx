@@ -1,16 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { ProductForm } from "@/components/produtos/product-form";
+import { loadActiveSalesChannels } from "@/lib/sales-channels";
 
 export default async function NovoProdutoPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: settings } = await supabase
-    .from("settings")
-    .select("packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee, desired_margin")
-    .eq("user_id", user!.id)
-    .single();
+  const [{ data: settings }, channels] = await Promise.all([
+    supabase
+      .from("settings")
+      .select("packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee, desired_margin")
+      .eq("user_id", user!.id)
+      .single(),
+    loadActiveSalesChannels(supabase, user!.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -26,6 +30,7 @@ export default async function NovoProdutoPage() {
           cardFee: Number(settings?.card_fee ?? 0),
           desiredMargin: Number(settings?.desired_margin ?? 0),
         }}
+        channels={channels}
       />
     </div>
   );

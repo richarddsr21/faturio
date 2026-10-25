@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProductForm } from "@/components/produtos/product-form";
+import { loadActiveSalesChannels } from "@/lib/sales-channels";
 
 export default async function EditarProdutoPage({
   params,
@@ -13,7 +14,7 @@ export default async function EditarProdutoPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: product }, { data: settings }] = await Promise.all([
+  const [{ data: product }, { data: settings }, channels] = await Promise.all([
     supabase
       .from("products")
       .select(
@@ -26,6 +27,7 @@ export default async function EditarProdutoPage({
       .select("packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee, desired_margin")
       .eq("user_id", user!.id)
       .single(),
+    loadActiveSalesChannels(supabase, user!.id),
   ]);
 
   if (!product) {
@@ -64,6 +66,7 @@ export default async function EditarProdutoPage({
           cardFee: Number(settings?.card_fee ?? 0),
           desiredMargin: Number(settings?.desired_margin ?? 0),
         }}
+        channels={channels}
       />
     </div>
   );
