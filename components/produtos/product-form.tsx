@@ -12,6 +12,7 @@ import { fractionToPercent, optionalNumber, percentToFraction } from "@/lib/util
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+import { ChannelPriceTable, type ChannelPriceTableChannel } from "@/components/produtos/channel-price-table";
 
 // Margem/taxas são pedidas como percentual (ex: 30 para 30%) — mais natural que a fração
 // armazenada no banco (0.3). `productSchema` continua sendo a forma canônica (fração), usada
@@ -57,10 +58,13 @@ export interface ProductFormProduct {
 export function ProductForm({
   product,
   settings,
+  channels = [],
   onCreated,
 }: {
   product?: ProductFormProduct;
   settings: ProductFormSettings;
+  /** Canais ativos para a tabela "Preço ideal por canal"; vazio esconde a tabela. */
+  channels?: ChannelPriceTableChannel[];
   /** Chamado após criar um produto. Sem ele, a página volta para a lista de produtos. */
   onCreated?: () => void;
 }) {
@@ -111,6 +115,7 @@ export function ProductForm({
   const cardFeePercent = watch("cardFee");
   const adminFee = adminFeePercent !== undefined ? percentToFraction(adminFeePercent) : settings.adminFee;
   const cardFee = cardFeePercent !== undefined ? percentToFraction(cardFeePercent) : settings.cardFee;
+  const currentPrice = watch("currentPrice");
 
   const suggestedPrice = useMemo(() => {
     try {
@@ -340,6 +345,14 @@ export function ProductForm({
           </span>
         </p>
       )}
+
+      <ChannelPriceTable
+        channels={channels}
+        unitCosts={cost + entryShipping + packagingCost + shippingCost + giftCost}
+        adminFee={adminFee}
+        desiredMargin={desiredMargin}
+        currentPrice={typeof currentPrice === "number" && Number.isFinite(currentPrice) ? currentPrice : null}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         {!product ? (
