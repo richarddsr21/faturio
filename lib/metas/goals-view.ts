@@ -1,6 +1,6 @@
-// Histórico de metas (tela de Metas), sem I/O.
-//
-// Mês de cada venda no fuso do servidor, igual à Visão geral por enquanto (#6).
+// Histórico de metas (tela de Metas), sem I/O. Mês de cada venda no horário de Brasília.
+
+import { monthKeyOf, zonedParts } from "@/lib/dates";
 
 export const monthNames = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -42,8 +42,7 @@ export function monthKey(year: number, month: number): string {
 export function totalsByMonth(sales: SaleRow[]): Map<string, { revenue: number; profit: number }> {
   const totals = new Map<string, { revenue: number; profit: number }>();
   for (const sale of sales) {
-    const date = new Date(sale.saleDate);
-    const key = monthKey(date.getFullYear(), date.getMonth() + 1);
+    const key = monthKeyOf(sale.saleDate);
     const entry = totals.get(key) ?? { revenue: 0, profit: 0 };
     entry.revenue += sale.grossRevenue;
     entry.profit += sale.netProfit;
@@ -58,7 +57,8 @@ export function totalsByMonth(sales: SaleRow[]): Map<string, { revenue: number; 
  */
 export function goalHistory(goals: GoalRow[], sales: SaleRow[], now: Date): GoalHistoryItem[] {
   const totals = totalsByMonth(sales);
-  const currentIndex = now.getFullYear() * 12 + now.getMonth();
+  const today = zonedParts(now);
+  const currentIndex = today.year * 12 + (today.month - 1);
 
   return goals
     .map((goal) => {
@@ -78,8 +78,7 @@ export function goalHistory(goals: GoalRow[], sales: SaleRow[], now: Date): Goal
 
 /** Resultado do mês anterior ao atual, para o selo do formulário. */
 export function previousMonthResult(history: GoalHistoryItem[], now: Date): GoalHistoryItem | null {
-  const previous = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  return (
-    history.find((item) => item.year === previous.getFullYear() && item.month === previous.getMonth() + 1) ?? null
-  );
+  const { year, month } = zonedParts(now);
+  const previous = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+  return history.find((item) => item.year === previous.year && item.month === previous.month) ?? null;
 }

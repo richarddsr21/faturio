@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateGoalProgress } from "@/lib/finance/goals";
 import { calculateAverageTicket } from "@/lib/finance/projection";
 import { isLowStock } from "@/lib/finance/stock";
+import { startOfZonedDay, zonedMonthStart, zonedParts } from "@/lib/dates";
 
 const RECENT_LIMIT = 5;
 const LOW_STOCK_LIMIT = 8;
@@ -95,10 +96,9 @@ export async function getQuickView(section: QuickViewSection): Promise<QuickView
   }
 
   const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
-  const startOfMonth = new Date(year, now.getMonth(), 1).toISOString();
-  const startOfNextMonth = new Date(year, now.getMonth() + 1, 1).toISOString();
+  const { month, year } = zonedParts(now);
+  const startOfMonth = zonedMonthStart(year, month).toISOString();
+  const startOfNextMonth = zonedMonthStart(year, month + 1).toISOString();
   const failed = { success: false as const, error: "Não foi possível carregar. Tente novamente." };
 
   switch (parsed.data) {
@@ -173,7 +173,7 @@ export async function getQuickView(section: QuickViewSection): Promise<QuickView
     }
 
     case "vendas": {
-      const startOfToday = new Date(year, now.getMonth(), now.getDate()).toISOString();
+      const startOfToday = startOfZonedDay(now).toISOString();
       const [{ data: monthSales, error }, { data: recent }, { data: products }] = await Promise.all([
         supabase
           .from("sales")

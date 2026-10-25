@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InitialAvatar } from "@/components/ui/initial-avatar";
@@ -223,7 +224,7 @@ function SaleRow({ sale }: { sale: SaleListItem }) {
           {sale.customerName || "Cliente não informado"}
         </p>
         <p className="text-xs text-muted-foreground">
-          {new Date(sale.saleDate).toLocaleDateString("pt-BR")}
+          {formatDate(sale.saleDate)}
           <span className="md:hidden"> · {paymentMethodLabel(sale.paymentMethod)}</span>
         </p>
       </div>

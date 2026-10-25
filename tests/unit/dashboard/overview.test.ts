@@ -13,10 +13,10 @@ import {
   type OverviewSale,
 } from "@/lib/dashboard/overview";
 
-const now = new Date(2026, 9, 19, 15, 0); // 19/out/2026
+const now = new Date("2026-10-19T15:00:00-03:00"); // 19/out/2026, horário de Brasília
 
 function sale(day: number, revenue: number, profit: number, items: OverviewSale["items"] = []): OverviewSale {
-  return { saleDate: new Date(2026, 8, day, 12).toISOString(), grossRevenue: revenue, netProfit: profit, items };
+  return { saleDate: `2026-09-${String(day).padStart(2, "0")}T12:00:00-03:00`, grossRevenue: revenue, netProfit: profit, items };
 }
 
 describe("parseMonthParam", () => {
@@ -43,20 +43,20 @@ describe("comparisonRange", () => {
   it("no mês atual, corta o mês anterior no mesmo dia", () => {
     const range = comparisonRange({ year: 2026, month: 10 }, now);
     expect(range.partial).toBe(true);
-    expect(range.start).toEqual(new Date(2026, 8, 1));
-    expect(range.end).toEqual(new Date(2026, 8, 20));
+    expect(range.start).toEqual(new Date("2026-09-01T00:00:00-03:00"));
+    expect(range.end).toEqual(new Date("2026-09-20T00:00:00-03:00"));
   });
 
   it("em mês fechado, usa o mês anterior inteiro", () => {
     const range = comparisonRange({ year: 2026, month: 9 }, now);
     expect(range.partial).toBe(false);
-    expect(range.end).toEqual(new Date(2026, 8, 1));
+    expect(range.end).toEqual(new Date("2026-09-01T00:00:00-03:00"));
   });
 
   it("dia 31 com mês anterior de 30 dias usa o mês anterior inteiro", () => {
-    const range = comparisonRange({ year: 2026, month: 10 }, new Date(2026, 9, 31));
+    const range = comparisonRange({ year: 2026, month: 10 }, new Date("2026-10-31T12:00:00-03:00"));
     expect(range.partial).toBe(false);
-    expect(range.end).toEqual(new Date(2026, 9, 1));
+    expect(range.end).toEqual(new Date("2026-10-01T00:00:00-03:00"));
   });
 });
 

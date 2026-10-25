@@ -1,6 +1,6 @@
-// Números e agrupamentos da tela de Vendas, sem I/O.
-//
-// Datas no fuso do servidor, como o resto do painel por enquanto (#6).
+// Números e agrupamentos da tela de Vendas, sem I/O. Datas no horário de Brasília.
+
+import { zonedMidnight, zonedParts } from "@/lib/dates";
 
 export const paymentMethodLabels: Record<string, string> = {
   pix: "Pix",
@@ -23,9 +23,8 @@ export function parseSalesPeriod(value: string | undefined): SalesPeriod {
 /** Início do período (meia-noite de N−1 dias atrás, contando hoje). null = desde sempre. */
 export function periodStart(period: SalesPeriod, now: Date): Date | null {
   if (period === "tudo") return null;
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  start.setDate(start.getDate() - (Number(period) - 1));
-  return start;
+  const { year, month, day } = zonedParts(now);
+  return zonedMidnight(year, month, day - (Number(period) - 1));
 }
 
 export interface SaleSummaryRow {
@@ -84,11 +83,11 @@ export interface MonthGroup<T> {
 export function groupByMonth<T extends { saleDate: string }>(sales: T[]): MonthGroup<T>[] {
   const groups: MonthGroup<T>[] = [];
   for (const sale of sales) {
-    const date = new Date(sale.saleDate);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const { year, month } = zonedParts(sale.saleDate);
+    const key = `${year}-${String(month).padStart(2, "0")}`;
     const last = groups[groups.length - 1];
     if (last?.key === key) last.items.push(sale);
-    else groups.push({ key, label: `${monthNames[date.getMonth()]} ${date.getFullYear()}`, items: [sale] });
+    else groups.push({ key, label: `${monthNames[month - 1]} ${year}`, items: [sale] });
   }
   return groups;
 }

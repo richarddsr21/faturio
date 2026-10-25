@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Overview } from "@/components/dashboard/overview";
 import { calculateStockPotential } from "@/lib/finance/stock-potential";
 import { calculateMonthProjection } from "@/lib/finance/projection";
+import { zonedParts } from "@/lib/dates";
 import {
   comparisonRange,
   cumulativeRevenue,
@@ -16,6 +17,7 @@ import {
   shiftMonth,
   summarizeSales,
   topProduct,
+  yearMonthOf,
   type OverviewSale,
 } from "@/lib/dashboard/overview";
 
@@ -55,7 +57,8 @@ export default async function DashboardPage({
 }) {
   const { mes } = await searchParams;
   const now = new Date();
-  const current = { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const current = yearMonthOf(now);
+  const today = zonedParts(now).day;
   const selected = parseMonthParam(Array.isArray(mes) ? mes[0] : mes, now);
   const isCurrentMonth = isSameMonth(selected, current);
   const range = monthRange(selected);
@@ -100,7 +103,7 @@ export default async function DashboardPage({
   const totals = summarizeSales(sales);
   const goal = goalStatus(goalResult.data ? Number(goalResult.data.revenue_goal) : null, totals.revenue);
   const projection = isCurrentMonth
-    ? calculateMonthProjection(totals.revenue, now.getDate(), daysInMonth(selected))
+    ? calculateMonthProjection(totals.revenue, today, daysInMonth(selected))
     : totals.revenue;
 
   return (
@@ -110,7 +113,7 @@ export default async function DashboardPage({
       current={current}
       monthName={monthNames[selected.month - 1]}
       previousName={monthNames[shiftMonth(selected, -1).month - 1]}
-      comparisonCutDay={comparison.partial ? now.getDate() : null}
+      comparisonCutDay={comparison.partial ? today : null}
       totals={totals}
       previousTotals={summarizeSales(previousSales)}
       goal={goal}

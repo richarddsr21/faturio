@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { GoalsScreen } from "@/components/metas/goals-screen";
 import { goalHistory, previousMonthResult } from "@/lib/metas/goals-view";
+import { zonedMonthStart, zonedParts } from "@/lib/dates";
 
 // O PostgREST devolve no máximo 1000 linhas por requisição; as vendas são lidas em blocos.
 const SALES_CHUNK = 1000;
@@ -24,7 +25,7 @@ export default async function MetasPage() {
   const sales: { saleDate: string; grossRevenue: number; netProfit: number }[] = [];
   const oldest = goals.at(-1);
   if (oldest) {
-    const since = new Date(oldest.year, oldest.month - 1, 1).toISOString();
+    const since = zonedMonthStart(oldest.year, oldest.month).toISOString();
     for (let from = 0; ; from += SALES_CHUNK) {
       const { data, error } = await supabase
         .from("sales")
@@ -47,11 +48,12 @@ export default async function MetasPage() {
 
   const now = new Date();
   const history = goalHistory(goals, sales, now);
+  const today = zonedParts(now);
 
   return (
     <GoalsScreen
       history={history}
-      current={{ month: now.getMonth() + 1, year: now.getFullYear() }}
+      current={{ month: today.month, year: today.year }}
       previous={previousMonthResult(history, now)}
     />
   );
