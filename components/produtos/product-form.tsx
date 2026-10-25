@@ -20,7 +20,6 @@ import { ChannelPriceTable, type ChannelPriceTableChannel } from "@/components/p
 const formSchema = productSchema.extend({
   desiredMargin: z.number().min(0).max(99999.99, "Valor muito alto").optional(),
   adminFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
-  cardFee: z.number().min(0).max(99.99, "Informe um percentual menor que 100%").optional(),
 });
 
 type FormInput = z.input<typeof formSchema>;
@@ -52,7 +51,6 @@ export interface ProductFormProduct {
   shippingCost: number | null;
   giftCost: number | null;
   adminFee: number | null;
-  cardFee: number | null;
 }
 
 export function ProductForm({
@@ -95,7 +93,6 @@ export function ProductForm({
           shippingCost: product.shippingCost ?? undefined,
           giftCost: product.giftCost ?? undefined,
           adminFee: product.adminFee !== null ? fractionToPercent(product.adminFee) : undefined,
-          cardFee: product.cardFee !== null ? fractionToPercent(product.cardFee) : undefined,
         }
       : { entryShipping: 0, minimumStock: 0 },
   });
@@ -112,23 +109,23 @@ export function ProductForm({
   const shippingCost = watch("shippingCost") ?? settings.shippingCost;
   const giftCost = watch("giftCost") ?? settings.giftCost;
   const adminFeePercent = watch("adminFee");
-  const cardFeePercent = watch("cardFee");
   const adminFee = adminFeePercent !== undefined ? percentToFraction(adminFeePercent) : settings.adminFee;
-  const cardFee = cardFeePercent !== undefined ? percentToFraction(cardFeePercent) : settings.cardFee;
   const currentPrice = watch("currentPrice");
 
+  // Preço sugerido geral: com a taxa de cartão de Configurações. O preço de cada canal, com a
+  // comissão do canal no lugar dela, fica na tabela "Preço ideal por canal".
   const suggestedPrice = useMemo(() => {
     try {
       return calculateRecommendedPrice({
         fixedCostsPerUnit: cost + entryShipping + packagingCost + shippingCost + giftCost,
-        feesPercentage: adminFee + cardFee,
+        feesPercentage: adminFee + settings.cardFee,
         desiredMargin,
       });
     } catch (error) {
       if (error instanceof PricingError) return null;
       throw error;
     }
-  }, [cost, entryShipping, packagingCost, shippingCost, giftCost, adminFee, cardFee, desiredMargin]);
+  }, [cost, entryShipping, packagingCost, shippingCost, giftCost, adminFee, settings.cardFee, desiredMargin]);
 
   // Preço de venda começa "gerenciado automaticamente" pelo preço sugerido: em produto novo,
   // ou editando um produto sem preço salvo, todo recálculo do sugerido atualiza o campo sozinho.
@@ -147,7 +144,6 @@ export function ProductForm({
       ...values,
       desiredMargin: values.desiredMargin !== undefined ? percentToFraction(values.desiredMargin) : undefined,
       adminFee: values.adminFee !== undefined ? percentToFraction(values.adminFee) : undefined,
-      cardFee: values.cardFee !== undefined ? percentToFraction(values.cardFee) : undefined,
     };
     const result = product ? await updateProduct(product.id, payload) : await createProduct(payload);
 
@@ -277,10 +273,6 @@ export function ProductForm({
             {...register("giftCost", { setValueAs: optionalNumber })}
           />
         </div>
-        <div />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="adminFee" className="mb-1.5 block text-sm font-medium text-foreground">
             Taxa administrativa (%)
@@ -293,19 +285,11 @@ export function ProductForm({
             {...register("adminFee", { setValueAs: optionalNumber })}
           />
         </div>
-        <div>
-          <label htmlFor="cardFee" className="mb-1.5 block text-sm font-medium text-foreground">
-            Taxa de cartão (%)
-          </label>
-          <Input
-            id="cardFee"
-            type="number"
-            step="0.01"
-            placeholder={fractionToPercent(settings.cardFee).toString()}
-            {...register("cardFee", { setValueAs: optionalNumber })}
-          />
-        </div>
       </div>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        Numa venda com vários produtos, embalagem, frete e brinde contam uma vez só, pelo maior valor entre eles. A
+        taxa de cartão é a de cada canal de venda.
+      </p>
 
       <div className="grid grid-cols-2 gap-4">
         <div>

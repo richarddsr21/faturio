@@ -37,6 +37,8 @@ export interface SaleFormProduct {
   id: string;
   name: string;
   currentPrice: number;
+  /** Taxa administrativa própria (fração); null = a de Configurações. */
+  adminFee: number | null;
 }
 
 export interface SaleFormChannel {
@@ -93,12 +95,14 @@ export function SaleForm({
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const [channelId, items, discount] = useWatch({ control, name: ["channelId", "items", "discount"] });
   const channel = channels.find((c) => c.id === channelId);
-  const grossRevenue =
-    (items ?? []).reduce((sum, item) => sum + num(item?.quantity) * num(item?.unitPrice), 0) - num(discount);
-  const totalQuantity = (items ?? []).reduce((sum, item) => sum + num(item?.quantity), 0);
-  const estimatedFees = channel
-    ? calculateSaleFees({ grossRevenue: Math.max(grossRevenue, 0), totalQuantity, adminFee, channel })
-    : 0;
+  const feeItems = (items ?? []).map((item) => ({
+    quantity: num(item?.quantity),
+    unitPrice: num(item?.unitPrice),
+    adminFee: products.find((p) => p.id === item?.productId)?.adminFee ?? adminFee,
+  }));
+  const grossRevenue = feeItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0) - num(discount);
+  const estimatedFees =
+    channel && grossRevenue > 0 ? calculateSaleFees({ items: feeItems, discount: num(discount), channel }) : 0;
 
   function handleProductChange(index: number, productId: string) {
     const product = products.find((p) => p.id === productId);

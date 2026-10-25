@@ -8,7 +8,7 @@ export default async function NovaVendaPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const [{ data: products }, { channels, adminFee }] = await Promise.all([
-    supabase.from("products").select("id, name, current_price").eq("status", "active").order("name"),
+    supabase.from("products").select("id, name, current_price, admin_fee").eq("status", "active").order("name"),
     loadSaleFormOptions(supabase, user!.id),
   ]);
 
@@ -22,6 +22,7 @@ export default async function NovaVendaPage() {
           id: p.id,
           name: p.name,
           currentPrice: p.current_price !== null ? Number(p.current_price) : 0,
+          adminFee: p.admin_fee !== null ? Number(p.admin_fee) : null,
         }))}
         channels={channels}
         adminFee={adminFee}
