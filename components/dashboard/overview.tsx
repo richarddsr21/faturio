@@ -19,6 +19,7 @@ import { InitialAvatar } from "@/components/ui/initial-avatar";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { QuickAccess, QuickActionButton } from "@/components/dashboard/quick-access";
 import { MonthSwitcher } from "@/components/dashboard/month-switcher";
+import { SaleDetailsButton } from "@/components/vendas/sale-details-dialog";
 import { formatDate } from "@/lib/dates";
 import {
   percentChange,
@@ -379,21 +380,27 @@ function RecentSales({ sales }: { sales: RecentSale[] }) {
       ) : (
         <ul className="mt-4 flex flex-col divide-y divide-border">
           {sales.map((sale) => (
-            <li key={sale.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-              <InitialAvatar name={sale.customerName} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{sale.customerName || "Sem cliente"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDayMonth(sale.saleDate)} · {paymentMethodLabels[sale.paymentMethod] ?? sale.paymentMethod}
-                </p>
-              </div>
-              <div className="text-right font-mono">
-                <p className="text-sm font-semibold">{formatCurrency(sale.grossRevenue)}</p>
-                <p className={`text-xs ${sale.netProfit < 0 ? "text-destructive" : "text-primary"}`}>
-                  {sale.netProfit >= 0 ? "+" : ""}
-                  {formatCurrency(sale.netProfit)}
-                </p>
-              </div>
+            <li key={sale.id} className="py-1.5 first:pt-0 last:pb-0">
+              <SaleDetailsButton
+                saleId={sale.id}
+                label={`Ver detalhes da venda${sale.customerName ? ` de ${sale.customerName}` : ""}`}
+                className="-mx-2 flex items-center gap-3 rounded-control px-2 py-1.5"
+              >
+                <InitialAvatar name={sale.customerName} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{sale.customerName || "Sem cliente"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDayMonth(sale.saleDate)} · {paymentMethodLabels[sale.paymentMethod] ?? sale.paymentMethod}
+                  </p>
+                </div>
+                <div className="text-right font-mono">
+                  <p className="text-sm font-semibold">{formatCurrency(sale.grossRevenue)}</p>
+                  <p className={`text-xs ${sale.netProfit < 0 ? "text-destructive" : "text-primary"}`}>
+                    {sale.netProfit >= 0 ? "+" : ""}
+                    {formatCurrency(sale.netProfit)}
+                  </p>
+                </div>
+              </SaleDetailsButton>
             </li>
           ))}
         </ul>

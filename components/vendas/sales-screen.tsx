@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, ShoppingCart } from "lucide-react";
+import { ChevronRight, Plus, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { MarginPill } from "@/components/ui/margin-pill";
 import { SegmentedNav } from "@/components/ui/segmented-nav";
 import { QuickActionButton } from "@/components/dashboard/quick-access";
 import { SalesSearch } from "@/components/vendas/sales-search";
+import { SaleDetailsButton } from "@/components/vendas/sale-details-dialog";
 import {
   groupByMonth,
   paymentMethodLabel,
@@ -219,39 +220,46 @@ function SaleRow({ sale }: { sale: SaleListItem }) {
   const margin = saleMargin(sale.grossRevenue, sale.netProfit);
 
   return (
-    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-control border border-border bg-card px-4 py-3 md:grid-cols-[auto_minmax(0,1.6fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.2fr)] md:gap-x-4">
-      <InitialAvatar name={sale.customerName} />
-      <div className="min-w-0">
-        <p className={cn("truncate text-sm font-semibold", !sale.customerName && "text-muted-foreground")}>
-          {sale.customerName || "Cliente não informado"}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {formatDate(sale.saleDate)}
-          {sale.channelName && <> · {sale.channelName}</>}
-          <span className="md:hidden"> · {paymentMethodLabel(sale.paymentMethod)}</span>
-        </p>
-      </div>
+    <li>
+      <SaleDetailsButton
+        saleId={sale.id}
+        label={`Ver detalhes da venda${sale.customerName ? ` de ${sale.customerName}` : ""}`}
+        className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-2 rounded-control border border-border bg-card px-4 py-3 md:grid-cols-[auto_minmax(0,1.6fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto] md:gap-x-4"
+      >
+        <InitialAvatar name={sale.customerName} />
+        <div className="min-w-0">
+          <p className={cn("truncate text-sm font-semibold", !sale.customerName && "text-muted-foreground")}>
+            {sale.customerName || "Cliente não informado"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {formatDate(sale.saleDate)}
+            {sale.channelName && <> · {sale.channelName}</>}
+            <span className="md:hidden"> · {paymentMethodLabel(sale.paymentMethod)}</span>
+          </p>
+        </div>
 
-      <span className="hidden md:inline-flex">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium">
-          <span
-            className={cn("h-1.5 w-1.5 rounded-full", paymentColors[sale.paymentMethod] ?? fallbackPaymentColor)}
-            aria-hidden
-          />
-          {paymentMethodLabel(sale.paymentMethod)}
+        <span className="hidden md:inline-flex">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium">
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full", paymentColors[sale.paymentMethod] ?? fallbackPaymentColor)}
+              aria-hidden
+            />
+            {paymentMethodLabel(sale.paymentMethod)}
+          </span>
         </span>
-      </span>
 
-      <p className="hidden text-right font-mono text-sm font-semibold md:block">{formatCurrency(sale.grossRevenue)}</p>
+        <p className="hidden text-right font-mono text-sm font-semibold md:block">{formatCurrency(sale.grossRevenue)}</p>
 
-      <div className="flex flex-col items-end gap-1 md:flex-row md:items-center md:justify-end md:gap-2.5">
-        <p className="font-mono text-sm font-semibold md:hidden">{formatCurrency(sale.grossRevenue)}</p>
-        <p className={cn("font-mono text-xs md:text-sm", sale.netProfit < 0 ? "text-destructive" : "text-primary")}>
-          {sale.netProfit >= 0 ? "+" : ""}
-          {formatCurrency(sale.netProfit)}
-        </p>
-        <MarginPill margin={margin} className="hidden md:inline-flex" />
-      </div>
+        <div className="flex flex-col items-end gap-1 md:flex-row md:items-center md:justify-end md:gap-2.5">
+          <p className="font-mono text-sm font-semibold md:hidden">{formatCurrency(sale.grossRevenue)}</p>
+          <p className={cn("font-mono text-xs md:text-sm", sale.netProfit < 0 ? "text-destructive" : "text-primary")}>
+            {sale.netProfit >= 0 ? "+" : ""}
+            {formatCurrency(sale.netProfit)}
+          </p>
+          <MarginPill margin={margin} className="hidden md:inline-flex" />
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+      </SaleDetailsButton>
     </li>
   );
 }
