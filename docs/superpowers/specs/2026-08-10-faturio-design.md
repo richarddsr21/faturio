@@ -313,9 +313,13 @@ isoladamente com Vitest e reaproveitadas tanto no dashboard quanto nos relatóri
 - Toda venda gera: 1 linha em `sales`, N linhas em `sale_items`, N movimentos em
   `inventory_movements` (`type='sale'`), e decrementa `products.stock_quantity` — tudo em uma
   única transação no banco (ou tudo aplica, ou nada aplica).
-- Taxas da venda (`sales.fees`): com canal, `faturamento × (taxa administrativa + comissão do
-  canal) + taxa fixa do canal × peças` — a comissão do canal substitui a taxa de cartão. Vendas
-  sem canal (anteriores a #14) seguem `faturamento × (taxa administrativa + taxa de cartão)`.
+- Taxas da venda (`sales.fees`): com canal, `Σ(valor do item × taxa administrativa do item) +
+  faturamento × comissão do canal + taxa fixa do canal × peças` — a comissão do canal substitui a
+  taxa de cartão. Sem canal (vendas anteriores a #14), a taxa de cartão de `settings` no lugar da
+  comissão. A taxa administrativa do item é a própria do produto ou, em branco, a de `settings`;
+  o desconto é rateado entre os itens pelo valor.
+- Custos por pedido (embalagem, frete, brinde): o maior entre os produtos da venda, cada um com o
+  seu valor próprio ou o de `settings` (#70). `products.card_fee` não é mais usado.
 - `sale_items.product_id` é validado como pertencente ao mesmo `user_id` da venda antes do
   insert (checagem explícita, além da RLS).
 

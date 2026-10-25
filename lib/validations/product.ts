@@ -14,11 +14,11 @@ export const productSchema = z.object({
   currentStock: z.number().int().min(0).optional(),
   // Custos que por padrão vêm de `settings` (globais), mas podem ser sobrescritos por
   // produto. `undefined` aqui vira NULL no banco = "usa o valor padrão de settings".
+  // A taxa de cartão própria saiu (#70): nas vendas vale a comissão do canal.
   packagingCost: z.number().min(0, "Não pode ser negativo").optional(),
   shippingCost: z.number().min(0, "Não pode ser negativo").optional(),
   giftCost: z.number().min(0, "Não pode ser negativo").optional(),
   adminFee: z.number().min(0).max(0.9999).optional(),
-  cardFee: z.number().min(0).max(0.9999).optional(),
 });
 
 export type ProductFieldsValues = z.infer<typeof productSchema>;

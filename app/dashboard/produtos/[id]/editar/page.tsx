@@ -18,7 +18,7 @@ export default async function EditarProdutoPage({
     supabase
       .from("products")
       .select(
-        "id, name, sku, category, supplier, cost, entry_shipping, current_price, desired_margin, minimum_stock, stock_quantity, packaging_cost, shipping_cost, gift_cost, admin_fee, card_fee"
+        "id, name, sku, category, supplier, cost, entry_shipping, current_price, desired_margin, minimum_stock, stock_quantity, packaging_cost, shipping_cost, gift_cost, admin_fee"
       )
       .eq("id", id)
       .single(),
@@ -56,7 +56,6 @@ export default async function EditarProdutoPage({
           shippingCost: product.shipping_cost !== null ? Number(product.shipping_cost) : null,
           giftCost: product.gift_cost !== null ? Number(product.gift_cost) : null,
           adminFee: product.admin_fee !== null ? Number(product.admin_fee) : null,
-          cardFee: product.card_fee !== null ? Number(product.card_fee) : null,
         }}
         settings={{
           packagingCost: Number(settings?.packaging_cost ?? 0),
