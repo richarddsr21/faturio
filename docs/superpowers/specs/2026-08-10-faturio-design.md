@@ -313,8 +313,8 @@ Estrutura e copy seguem integralmente o conteúdo já definido no prompt origina
 benefícios, preço, confiança, FAQ). Sem depoimentos ou números inventados — estrutura
 preparada para inserir depoimentos reais depois. Mobile-first, com Framer Motion para
 fade-in/slide-up/hover discretos, FAQ em accordion, SEO completo (title, meta description,
-Open Graph, favicon, heading hierarchy). Domínio ainda não definido — meta tags usam
-placeholder a ser substituído quando o domínio for registrado.
+Open Graph, favicon, heading hierarchy). Domínio: `faturio.com.br` (usado em `metadataBase`,
+sitemap, robots e JSON-LD).
 
 ## 10. Dashboard
 
@@ -408,7 +408,6 @@ requer revisão profissional antes de publicação. Exclusão de conta: fluxo de
 
 - Envio de e-mails de aviso de vencimento (não aplicável a acesso vitalício).
 - Emissão de nota fiscal.
-- Domínio definitivo (placeholder usado até o cliente registrar um).
 
 ## 16. Estrutura do projeto
 
