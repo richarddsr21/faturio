@@ -18,10 +18,14 @@ const softwareApplicationJsonLd = {
   description:
     "Saiba quanto vender, quanto lucrar e quanto falta para atingir sua meta. Controle preços, produtos, estoque e vendas no Faturio.",
   url: "https://faturio.com.br",
+  // Planos mensais Essencial, Pro e IA (lib/plans.ts).
   offers: {
-    "@type": "Offer",
-    price: "129.90",
+    "@type": "AggregateOffer",
+    lowPrice: "29.90",
+    highPrice: "109.90",
+    offerCount: 3,
     priceCurrency: "BRL",
+    url: "https://faturio.com.br/planos",
   },
 };
 

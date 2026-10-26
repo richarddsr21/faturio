@@ -31,14 +31,16 @@ const actionCopy: Record<
 > = {
   block: {
     title: "Bloquear acesso",
-    description: (name) => `${name} não conseguirá mais entrar no painel até ser reativado.`,
+    description: (name) =>
+      `${name} não conseguirá mais entrar no painel até ser reativado. Se tiver plano mensal, a assinatura é cancelada no Mercado Pago e não haverá novas cobranças.`,
     confirm: "Bloquear",
     pending: "Bloqueando...",
     done: "Acesso bloqueado.",
   },
   unblock: {
     title: "Reativar acesso",
-    description: (name) => `${name} volta a entrar no painel normalmente.`,
+    description: (name) =>
+      `${name} volta a entrar no painel normalmente. Um plano mensal cancelado no bloqueio vale só até o fim do período já pago; para continuar, é preciso assinar de novo.`,
     confirm: "Reativar",
     pending: "Reativando...",
     done: "Acesso reativado.",

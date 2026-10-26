@@ -6,12 +6,12 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const links = [
-  { href: "#produto", label: "Produto" },
-  { href: "#para-quem", label: "Para quem é" },
-  { href: "#funcionalidades", label: "Funcionalidades" },
-  { href: "#como-funciona", label: "Como funciona" },
-  { href: "#preco", label: "Preço" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#produto", label: "Produto" },
+  { href: "/#para-quem", label: "Para quem é" },
+  { href: "/#funcionalidades", label: "Funcionalidades" },
+  { href: "/#como-funciona", label: "Como funciona" },
+  { href: "/#preco", label: "Preço" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 export function Navbar() {
@@ -37,7 +37,7 @@ export function Navbar() {
             Entrar
           </Link>
           <Button asChild size="sm">
-            <Link href="/checkout">Começar agora</Link>
+            <Link href="/planos">Começar agora</Link>
           </Button>
         </div>
         <button
@@ -70,7 +70,7 @@ export function Navbar() {
               Entrar
             </Link>
             <Button asChild size="sm" className="w-full">
-              <Link href="/checkout">Começar agora</Link>
+              <Link href="/planos">Começar agora</Link>
             </Button>
           </div>
         </div>

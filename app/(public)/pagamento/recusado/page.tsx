@@ -12,7 +12,7 @@ export default function PagamentoRecusadoPage() {
         Não foi possível concluir seu pagamento.
       </h1>
       <Button asChild size="lg">
-        <Link href="/checkout">Tentar novamente</Link>
+        <Link href="/planos">Tentar novamente</Link>
       </Button>
       <p className="text-sm text-muted-foreground">
         Precisa de ajuda?{" "}
