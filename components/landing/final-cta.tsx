@@ -10,10 +10,10 @@ export function FinalCTA() {
           Pare de adivinhar. Comece a saber.
         </h2>
         <p className="text-lg text-muted-foreground">
-          Preço certo, estoque em dia e a meta do mês sempre à vista, por R$ 129,90 uma única vez.
+          Preço certo, estoque em dia e a meta do mês sempre à vista, a partir de R$ 29,90/mês.
         </p>
         <Button asChild size="lg">
-          <Link href="/checkout">Começar agora</Link>
+          <Link href="/planos">Começar agora</Link>
         </Button>
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <ShieldCheck className="h-4 w-4 text-success" /> Garantia de 7 dias ou seu dinheiro de

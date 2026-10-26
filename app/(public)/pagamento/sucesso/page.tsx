@@ -9,9 +9,10 @@ export default function PagamentoSucessoPage() {
         <CheckCircle2 className="h-7 w-7" />
       </div>
       <div className="max-w-sm">
-        <h1 className="text-2xl font-semibold text-foreground">Pagamento confirmado!</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Assinatura recebida!</h1>
         <p className="mt-2 text-muted-foreground">
-          Seu acesso foi liberado. Enviamos um e-mail para você definir sua senha e entrar.
+          Seu acesso é liberado assim que o Mercado Pago confirmar o pagamento, em geral em poucos
+          minutos. Se é sua primeira vez, enviamos um e-mail para você definir sua senha e entrar.
         </p>
       </div>
       <Button asChild size="lg">
