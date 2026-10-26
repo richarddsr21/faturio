@@ -19,9 +19,11 @@ export function Hero() {
         </p>
         <div className="flex flex-col items-center gap-4 sm:flex-row">
           <Button asChild size="lg">
-            <Link href="/checkout">Começar agora</Link>
+            <Link href="/planos">Começar agora</Link>
           </Button>
-          <Badge>R$ 129,90 — Pagamento único</Badge>
+          <Link href="/planos">
+            <Badge>A partir de R$ 29,90/mês</Badge>
+          </Link>
         </div>
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <ShieldCheck className="h-4 w-4 text-success" /> Garantia de 7 dias ou seu dinheiro de

@@ -86,7 +86,7 @@ export default function LoginPage() {
             <Link href="/esqueci-senha" className="hover:text-foreground">
               Esqueci minha senha
             </Link>
-            <Link href="/checkout" className="hover:text-foreground">
+            <Link href="/planos" className="hover:text-foreground">
               Comece agora
             </Link>
           </div>

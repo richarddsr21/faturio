@@ -43,7 +43,19 @@ export function toUtmifyPaymentMethod(payment: MercadoPagoPaymentForUtmify): Utm
   return "credit_card";
 }
 
-export function buildPaidOrder(payment: MercadoPagoPaymentForUtmify, customer: UtmifyCustomer) {
+export interface UtmifyProduct {
+  id: string;
+  name: string;
+}
+
+/** Produto do pagamento único (vitalício); as assinaturas mandam o plano. */
+const LIFETIME_PRODUCT: UtmifyProduct = { id: "faturio-acesso", name: "Faturio — Acesso completo" };
+
+export function buildPaidOrder(
+  payment: MercadoPagoPaymentForUtmify,
+  customer: UtmifyCustomer,
+  product: UtmifyProduct = LIFETIME_PRODUCT
+) {
   const totalPriceInCents = toCents(payment.transaction_amount);
   const gatewayFeeInCents = toCents(
     (payment.fee_details ?? []).reduce((sum, fee) => sum + fee.amount, 0)
@@ -70,8 +82,8 @@ export function buildPaidOrder(payment: MercadoPagoPaymentForUtmify, customer: U
     },
     products: [
       {
-        id: "faturio-acesso",
-        name: "Faturio — Acesso completo",
+        id: product.id,
+        name: product.name,
         planId: null,
         planName: null,
         quantity: 1,
@@ -103,7 +115,7 @@ export type UtmifySendResult =
 export async function sendPaidSaleToUtmify(
   payment: MercadoPagoPaymentForUtmify,
   customer: UtmifyCustomer,
-  options: { isTest?: boolean } = {}
+  options: { isTest?: boolean; product?: UtmifyProduct } = {}
 ): Promise<UtmifySendResult> {
   const token = process.env.UTMIFY_API_TOKEN;
   if (!token) return { sent: false, reason: "missing_token" };
@@ -112,7 +124,7 @@ export async function sendPaidSaleToUtmify(
     const response = await fetch(UTMIFY_ORDERS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-token": token },
-      body: JSON.stringify({ ...buildPaidOrder(payment, customer), isTest: options.isTest ?? false }),
+      body: JSON.stringify({ ...buildPaidOrder(payment, customer, options.product), isTest: options.isTest ?? false }),
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {

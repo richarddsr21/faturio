@@ -70,6 +70,14 @@ describe("buildPaidOrder", () => {
     const order = buildPaidOrder({ ...payment, transaction_details: undefined }, customer);
     expect(order.commission.userCommissionInCents).toBe(12990 - 129);
   });
+
+  it("assinatura mensal manda o plano como produto", () => {
+    const order = buildPaidOrder({ ...payment, transaction_amount: 59.9 }, customer, {
+      id: "faturio-pro",
+      name: "Faturio — Plano Pro",
+    });
+    expect(order.products[0]).toMatchObject({ id: "faturio-pro", name: "Faturio — Plano Pro", priceInCents: 5990 });
+  });
 });
 
 describe("sendPaidSaleToUtmify", () => {

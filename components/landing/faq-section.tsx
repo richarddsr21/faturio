@@ -7,8 +7,9 @@ import {
 
 const faqs = [
   {
-    question: "É realmente pagamento único, sem mensalidade?",
-    answer: "Sim. Você paga uma vez R$ 129,90 e tem acesso vitalício ao Faturio.",
+    question: "Quanto custa? Tem fidelidade?",
+    answer:
+      "Os planos começam em R$ 29,90/mês, sem fidelidade. Você pode cancelar quando quiser e continua usando até o fim do mês já pago. Veja todos os planos em faturio.com.br/planos.",
   },
   {
     question: "E se eu não gostar?",

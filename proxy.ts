@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { effectivePlan } from "@/lib/plans";
+import { loadSubscriptions } from "@/lib/subscriptions";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -41,19 +43,20 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  const { data: subscriptions } = await supabase
-    .from("subscriptions")
-    .select("status")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .limit(1);
+  // Vitalício ativo, ou mensal dentro do período pago (mesmo cancelada ou com cobrança
+  // falhando). Assinatura autorizada que ainda espera o primeiro pagamento vai para a
+  // tela de pagamento pendente; sem nada, para os planos.
+  const subscriptions = await loadSubscriptions(supabase, user.id);
 
-  if (!subscriptions || subscriptions.length === 0) {
-    const checkoutResponse = NextResponse.redirect(new URL("/checkout", request.url));
+  if (!effectivePlan(subscriptions, new Date())) {
+    const awaitingPayment = subscriptions.some((s) => s.status === "pending");
+    const planosResponse = NextResponse.redirect(
+      new URL(awaitingPayment ? "/pagamento/pendente" : "/planos", request.url)
+    );
     response.cookies.getAll().forEach(cookie => {
-      checkoutResponse.cookies.set(cookie.name, cookie.value, cookie);
+      planosResponse.cookies.set(cookie.name, cookie.value, cookie);
     });
-    return checkoutResponse;
+    return planosResponse;
   }
 
   const { data: settings } = await supabase

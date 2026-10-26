@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { SalesChannelsForm } from "@/components/settings/sales-channels-form";
+import { PlanSection, type PlanSectionProps } from "@/components/settings/plan-section";
+import { effectivePlan, grantsAccess, isRecurringPlan } from "@/lib/plans";
+import { loadSubscriptions } from "@/lib/subscriptions";
 
 export default async function ConfiguracoesPage() {
   // Client da sessão: RLS restringe settings e products às linhas do próprio usuário.
@@ -9,7 +12,7 @@ export default async function ConfiguracoesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: settings }, { data: products }, { data: channels }] = await Promise.all([
+  const [{ data: settings }, { data: products }, { data: channels }, subscriptions] = await Promise.all([
     supabase
       .from("settings")
       .select("packaging_cost, gift_cost, shipping_cost, admin_fee, card_fee, traffic_cost, desired_margin")
@@ -28,7 +31,23 @@ export default async function ConfiguracoesPage() {
       .select("id, name, commission, fixed_fee, active")
       .order("position")
       .order("created_at"),
+    loadSubscriptions(supabase, user!.id),
   ]);
+
+  // Mensal que aparece na seção Plano: a em andamento ou, se cancelada, a que ainda vale.
+  const now = new Date();
+  const monthlySubscription =
+    subscriptions.find((s) => s.plan !== "lifetime" && ["pending", "active", "past_due"].includes(s.status)) ??
+    subscriptions.find((s) => s.plan !== "lifetime" && grantsAccess(s, now));
+  const monthly: PlanSectionProps["monthly"] =
+    monthlySubscription && isRecurringPlan(monthlySubscription.plan)
+      ? {
+          plan: monthlySubscription.plan,
+          status: monthlySubscription.status,
+          amount: monthlySubscription.amount,
+          periodEnd: monthlySubscription.current_period_end,
+        }
+      : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -41,6 +60,11 @@ export default async function ConfiguracoesPage() {
           Esses valores entram no cálculo de preço e no lucro de cada venda.
         </p>
       </header>
+      <PlanSection
+        currentPlan={effectivePlan(subscriptions, now) ?? "basic"}
+        hasLifetime={subscriptions.some((s) => s.plan === "lifetime" && s.status === "active")}
+        monthly={monthly}
+      />
       <SettingsForm
         defaultValues={{
           packagingCost: Number(settings?.packaging_cost ?? 0),

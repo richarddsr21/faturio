@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { getAdminUser } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cancelMercadoPagoPreapproval } from "@/lib/mercadopago/client";
+import { statusAfterUnblock, type Plan } from "@/lib/plans";
 
 export interface AdminActionResult {
   success: boolean;
@@ -37,19 +39,28 @@ export async function setCustomerAccess(
   }
 
   const supabase = createAdminClient();
-  const fromStatus = blocked ? "active" : "blocked";
-  const toStatus = blocked ? "blocked" : "active";
+  // Um vitalício com upgrade tem duas assinaturas (a vitalícia e a mensal): bloquear e
+  // reativar valem para todas. Bloquear também cancela a mensal no Mercado Pago, para o
+  // cliente bloqueado não continuar sendo cobrado.
+  const fromStatuses = blocked ? ["pending", "active", "past_due"] : ["blocked"];
 
-  const { data: subscription } = await supabase
+  const { data: rows, error: loadError } = await supabase
     .from("subscriptions")
-    .select("id")
+    .select("id, plan, mercadopago_preapproval_id")
     .eq("user_id", customerId)
-    .eq("status", fromStatus)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .in("status", fromStatuses);
 
-  if (!subscription) {
+  if (loadError) {
+    return { success: false, error: "Não foi possível alterar o acesso. Tente novamente." };
+  }
+
+  const targets = (rows ?? []).map((row) => ({
+    id: row.id as string,
+    plan: row.plan as Plan,
+    mercadopago_preapproval_id: row.mercadopago_preapproval_id as string | null,
+  }));
+
+  if (targets.length === 0) {
     return {
       success: false,
       error: blocked
@@ -58,20 +69,53 @@ export async function setCustomerAccess(
     };
   }
 
-  const { error } = await supabase
-    .from("subscriptions")
-    .update({ status: toStatus })
-    .eq("id", subscription.id);
+  const cancelledPreapprovalIds: string[] = [];
+  if (blocked) {
+    for (const subscription of targets) {
+      if (subscription.plan === "lifetime" || !subscription.mercadopago_preapproval_id) continue;
+      try {
+        await cancelMercadoPagoPreapproval(subscription.mercadopago_preapproval_id);
+        cancelledPreapprovalIds.push(subscription.mercadopago_preapproval_id);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`[admin] Erro ao cancelar assinatura no Mercado Pago: ${errorMessage}`);
+        return {
+          success: false,
+          error: "Não foi possível cancelar a cobrança no Mercado Pago. O acesso não foi bloqueado; tente novamente.",
+        };
+      }
+    }
+  }
 
-  if (error) {
-    return { success: false, error: "Não foi possível alterar o acesso. Tente novamente." };
+  // Na reativação, a vitalícia volta a active e a mensal (já cancelada no MP) a cancelled.
+  const groups = new Map<string, string[]>();
+  for (const subscription of targets) {
+    const toStatus = blocked ? "blocked" : statusAfterUnblock(subscription.plan);
+    groups.set(toStatus, [...(groups.get(toStatus) ?? []), subscription.id]);
+  }
+
+  const subscriptions: { id: string }[] = [];
+  for (const [toStatus, ids] of groups) {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .update({ status: toStatus })
+      .in("id", ids)
+      .in("status", fromStatuses)
+      .select("id");
+    if (error) {
+      return { success: false, error: "Não foi possível alterar o acesso. Tente novamente." };
+    }
+    subscriptions.push(...(data ?? []));
   }
 
   await supabase.from("admin_audit_log").insert({
     admin_id: admin.id,
     action: blocked ? "block_customer" : "unblock_customer",
     target_user_id: customerId,
-    details: { subscription_id: subscription.id },
+    details: {
+      subscription_ids: subscriptions.map((s) => s.id),
+      cancelled_preapproval_ids: cancelledPreapprovalIds,
+    },
   });
 
   return { success: true };
@@ -277,6 +321,8 @@ export async function grantManualAccess(
     .from("subscriptions")
     .insert({
       user_id: customerId,
+      // Acesso liberado pelo admin é vitalício, como era antes dos planos mensais.
+      plan: "lifetime",
       status: "active",
       amount: 0,
       started_at: new Date().toISOString(),
