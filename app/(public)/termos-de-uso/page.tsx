@@ -33,8 +33,12 @@ export default function TermosDeUsoPage() {
           <h2 className="mb-2 text-lg font-semibold text-foreground">2. Descrição do serviço</h2>
           <p>
             O Faturio é uma plataforma de precificação, controle de estoque, registro de vendas e
-            acompanhamento de metas de faturamento, oferecida mediante pagamento único de acesso
-            vitalício.
+            acompanhamento de metas de faturamento, oferecida mediante assinatura mensal. Os
+            planos disponíveis, seus preços e recursos estão descritos na{" "}
+            <Link href="/planos" className="underline">
+              página de planos
+            </Link>
+            .
           </p>
         </section>
 
@@ -57,19 +61,29 @@ export default function TermosDeUsoPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-foreground">5. Pagamento e vitaliciedade do acesso</h2>
+          <h2 className="mb-2 text-lg font-semibold text-foreground">5. Assinatura, cobrança e renovação</h2>
           <p>
-            O acesso é concedido mediante pagamento único e não possui cobrança recorrente. O
-            acesso pode ser suspenso em caso de uso indevido da plataforma ou violação destes
-            termos.
+            A assinatura é cobrada mensalmente, de forma automática, pelo Mercado Pago, no meio
+            de pagamento escolhido na contratação. Cada pagamento libera o acesso por um mês, e
+            a assinatura se renova sozinha até ser cancelada. Se uma cobrança não for aprovada,
+            o acesso continua até o fim do período já pago enquanto o Mercado Pago tenta cobrar
+            novamente; sem pagamento, o acesso é encerrado ao fim desse período.
+          </p>
+          <p className="mt-2">
+            Quem adquiriu o acesso vitalício por pagamento único mantém esse acesso, sem cobrança
+            recorrente, e pode contratar opcionalmente um plano mensal superior.
+          </p>
+          <p className="mt-2">
+            O acesso pode ser suspenso em caso de uso indevido da plataforma ou violação destes
+            termos. Nesse caso, a assinatura mensal é cancelada e não há novas cobranças.
           </p>
         </section>
 
         <section>
           <h2 className="mb-2 text-lg font-semibold text-foreground">6. Garantia e reembolso</h2>
           <p>
-            Você tem 7 (sete) dias corridos a partir da confirmação do pagamento para desistir da
-            compra, conforme o art. 49 do Código de Defesa do Consumidor. Para isso, basta enviar
+            Você tem 7 (sete) dias corridos a partir da confirmação do primeiro pagamento para
+            desistir da contratação, conforme o art. 49 do Código de Defesa do Consumidor. Para isso, basta enviar
             um e-mail para{" "}
             <a href="mailto:richarddsr21@gmail.com" className="underline">
               richarddsr21@gmail.com
@@ -82,7 +96,13 @@ export default function TermosDeUsoPage() {
         <section>
           <h2 className="mb-2 text-lg font-semibold text-foreground">7. Cancelamento e exclusão de conta</h2>
           <p>
-            Para solicitar o cancelamento e a exclusão da sua conta e dos seus dados, entre em
+            Você pode cancelar a assinatura mensal a qualquer momento, sem multa, em
+            Configurações → Plano. O cancelamento interrompe as próximas cobranças, e o acesso
+            continua até o fim do período já pago, sem reembolso proporcional, exceto no caso
+            previsto na seção 6.
+          </p>
+          <p className="mt-2">
+            Para solicitar a exclusão da sua conta e dos seus dados, entre em
             contato com nosso suporte pelo e-mail{" "}
             <a href="mailto:richarddsr21@gmail.com" className="underline">
               richarddsr21@gmail.com
