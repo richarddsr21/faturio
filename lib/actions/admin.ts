@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { getAdminUser } from "@/lib/admin/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cancelMercadoPagoPreapproval } from "@/lib/mercadopago/client";
+import { statusAfterUnblock, type Plan } from "@/lib/plans";
 
 export interface AdminActionResult {
   success: boolean;
@@ -38,22 +40,27 @@ export async function setCustomerAccess(
 
   const supabase = createAdminClient();
   // Um vitalício com upgrade tem duas assinaturas (a vitalícia e a mensal): bloquear e
-  // reativar valem para todas. Bloquear não cancela a cobrança no Mercado Pago.
-  const fromStatuses = blocked ? ["active", "past_due"] : ["blocked"];
-  const toStatus = blocked ? "blocked" : "active";
+  // reativar valem para todas. Bloquear também cancela a mensal no Mercado Pago, para o
+  // cliente bloqueado não continuar sendo cobrado.
+  const fromStatuses = blocked ? ["pending", "active", "past_due"] : ["blocked"];
 
-  const { data: subscriptions, error } = await supabase
+  const { data: rows, error: loadError } = await supabase
     .from("subscriptions")
-    .update({ status: toStatus })
+    .select("id, plan, mercadopago_preapproval_id")
     .eq("user_id", customerId)
-    .in("status", fromStatuses)
-    .select("id");
+    .in("status", fromStatuses);
 
-  if (error) {
+  if (loadError) {
     return { success: false, error: "Não foi possível alterar o acesso. Tente novamente." };
   }
 
-  if (!subscriptions || subscriptions.length === 0) {
+  const targets = (rows ?? []).map((row) => ({
+    id: row.id as string,
+    plan: row.plan as Plan,
+    mercadopago_preapproval_id: row.mercadopago_preapproval_id as string | null,
+  }));
+
+  if (targets.length === 0) {
     return {
       success: false,
       error: blocked
@@ -62,11 +69,53 @@ export async function setCustomerAccess(
     };
   }
 
+  const cancelledPreapprovalIds: string[] = [];
+  if (blocked) {
+    for (const subscription of targets) {
+      if (subscription.plan === "lifetime" || !subscription.mercadopago_preapproval_id) continue;
+      try {
+        await cancelMercadoPagoPreapproval(subscription.mercadopago_preapproval_id);
+        cancelledPreapprovalIds.push(subscription.mercadopago_preapproval_id);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`[admin] Erro ao cancelar assinatura no Mercado Pago: ${errorMessage}`);
+        return {
+          success: false,
+          error: "Não foi possível cancelar a cobrança no Mercado Pago. O acesso não foi bloqueado; tente novamente.",
+        };
+      }
+    }
+  }
+
+  // Na reativação, a vitalícia volta a active e a mensal (já cancelada no MP) a cancelled.
+  const groups = new Map<string, string[]>();
+  for (const subscription of targets) {
+    const toStatus = blocked ? "blocked" : statusAfterUnblock(subscription.plan);
+    groups.set(toStatus, [...(groups.get(toStatus) ?? []), subscription.id]);
+  }
+
+  const subscriptions: { id: string }[] = [];
+  for (const [toStatus, ids] of groups) {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .update({ status: toStatus })
+      .in("id", ids)
+      .in("status", fromStatuses)
+      .select("id");
+    if (error) {
+      return { success: false, error: "Não foi possível alterar o acesso. Tente novamente." };
+    }
+    subscriptions.push(...(data ?? []));
+  }
+
   await supabase.from("admin_audit_log").insert({
     admin_id: admin.id,
     action: blocked ? "block_customer" : "unblock_customer",
     target_user_id: customerId,
-    details: { subscription_ids: subscriptions.map((s) => s.id) },
+    details: {
+      subscription_ids: subscriptions.map((s) => s.id),
+      cancelled_preapproval_ids: cancelledPreapprovalIds,
+    },
   });
 
   return { success: true };

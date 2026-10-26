@@ -6,6 +6,7 @@ import {
   grantsAccess,
   hasFeature,
   sameAmount,
+  statusAfterUnblock,
   type Feature,
   type SubscriptionAccessRow,
 } from "@/lib/plans";
@@ -101,5 +102,22 @@ describe("sameAmount", () => {
   it("compara centavos, sem erro de ponto flutuante", () => {
     expect(sameAmount(0.1 + 0.2, 0.3)).toBe(true);
     expect(sameAmount(29.9, 29.89)).toBe(false);
+  });
+});
+
+describe("statusAfterUnblock", () => {
+  it("vitalício volta a ter acesso", () => {
+    expect(statusAfterUnblock("lifetime")).toBe("active");
+  });
+
+  it("mensal volta cancelada: o bloqueio cancelou a cobrança no Mercado Pago", () => {
+    expect(statusAfterUnblock("basic")).toBe("cancelled");
+    expect(statusAfterUnblock("pro")).toBe("cancelled");
+    expect(statusAfterUnblock("premium")).toBe("cancelled");
+  });
+
+  it("mensal reativada dá acesso só até o fim do período já pago", () => {
+    expect(grantsAccess(monthly("pro", statusAfterUnblock("pro"), future), now)).toBe(true);
+    expect(grantsAccess(monthly("pro", statusAfterUnblock("pro"), past), now)).toBe(false);
   });
 });

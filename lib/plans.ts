@@ -125,6 +125,15 @@ export function effectivePlan(subscriptions: SubscriptionAccessRow[], now: Date)
   return best;
 }
 
+/**
+ * Status de uma assinatura bloqueada pelo admin ao ser reativada. O bloqueio cancela a
+ * mensal no Mercado Pago, então ela volta como cancelled: acesso até o fim do período já
+ * pago, sem nova cobrança. A vitalícia volta a active.
+ */
+export function statusAfterUnblock(plan: Plan): "active" | "cancelled" {
+  return plan === "lifetime" ? "active" : "cancelled";
+}
+
 export function formatPrice(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
