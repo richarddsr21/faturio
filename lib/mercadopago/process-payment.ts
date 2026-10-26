@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { findOrInviteCustomer } from "@/lib/mercadopago/customer-account";
 
 export interface MercadoPagoPayment {
   id: string;
@@ -8,7 +9,7 @@ export interface MercadoPagoPayment {
 
 export interface ProcessPaymentResult {
   created: boolean;
-  reason?: "already_processed" | "not_approved";
+  reason?: "already_processed" | "not_approved" | "subscription_checkout";
   userId?: string;
   /** Só quando created = true: dados do checkout, usados na notificação de venda. */
   customer?: { name: string; email: string };
@@ -31,6 +32,13 @@ export async function processPayment(
     );
   }
 
+  // Checkout de assinatura mensal: cada cobrança também gera uma notificação "payment" com o
+  // mesmo external_reference, mas quem trata é o webhook de assinatura. Sem isso, o valor
+  // mensal (menor que 129,90) marcaria o checkout como falho.
+  if (checkout.plan) {
+    return { created: false, reason: "subscription_checkout" };
+  }
+
   if (payment.status !== "approved") {
     await admin
       .from("pending_checkouts")
@@ -49,54 +57,17 @@ export async function processPayment(
     return { created: false, reason: "already_processed" };
   }
 
-  let userId: string;
-  let isNewUser = false;
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-    checkout.email,
-    {
-      data: { name: checkout.name },
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
-    }
-  );
+  const { userId, isNewUser } = await findOrInviteCustomer(admin, checkout);
 
-  if (inviteError) {
-    // Se o erro for por e-mail já registrado, reutilizar o usuário existente
-    if (inviteError.message?.includes("already registered") || inviteError.message?.includes("already exists")) {
-      const { data: existingProfile } = await admin
-        .from("profiles")
-        .select("id")
-        .eq("email", checkout.email)
-        .maybeSingle();
-
-      if (existingProfile?.id) {
-        userId = existingProfile.id;
-        isNewUser = false;
-      } else {
-        throw new Error(`Falha ao convidar usuário: ${inviteError.message}`);
-      }
-    } else {
-      throw new Error(`Falha ao convidar usuário: ${inviteError.message}`);
-    }
-  } else if (!invited.user) {
-    throw new Error(`Falha ao convidar usuário: resposta vazia`);
-  } else {
-    userId = invited.user.id;
-    isNewUser = true;
-  }
-
-  if (isNewUser) {
-    const { error: profileError } = await admin.from("profiles").insert({ id: userId, name: checkout.name, email: checkout.email });
-    if (profileError) {
-      throw new Error(`Falha ao inserir perfil: ${profileError.message}`);
-    }
-  } else {
-    // Usuário reaproveitado: garante que ele ainda não tem uma assinatura ativa
+  if (!isNewUser) {
+    // Usuário reaproveitado: garante que ele ainda não tem uma assinatura vitalícia ativa
     // antes de inserir outra (evita depender só da constraint do banco).
     const { data: activeSubscription } = await admin
       .from("subscriptions")
       .select("id")
       .eq("user_id", userId)
       .eq("status", "active")
+      .eq("plan", "lifetime")
       .maybeSingle();
 
     if (activeSubscription) {
@@ -106,6 +77,7 @@ export async function processPayment(
 
   const { error: subError } = await admin.from("subscriptions").insert({
     user_id: userId,
+    plan: "lifetime",
     status: "active",
     mercadopago_payment_id: payment.id,
     amount: 129.9,
